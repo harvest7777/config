@@ -13,7 +13,7 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("plugins")
+require('lazy').setup('plugins')  -- scans lua/plugins/ automatically
 require("options")
 require("keymaps")
 

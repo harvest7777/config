@@ -18,6 +18,7 @@ vim.opt.wrap = false           -- don't wrap long lines
 vim.opt.scrolloff = 8          -- keep 8 lines above/below cursor
 vim.opt.signcolumn = 'yes'     -- always show sign column (prevents jumpiness)
 vim.opt.cursorline = true      -- highlight current line
+vim.opt.cmdheight = 0          -- hides it when not in use
 
 -- splits
 vim.opt.splitright = true      -- vsplit opens right
