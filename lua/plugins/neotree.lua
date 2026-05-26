@@ -10,6 +10,11 @@ return {
   opts = {
     filesystem = {
       bind_to_cwd = false,
+      filtered_items = {
+        visible = true,       -- show hidden items but dimmed
+        hide_dotfiles = false,
+        hide_gitignored = false,
+      }
     },
     window = {
       mappings = {
