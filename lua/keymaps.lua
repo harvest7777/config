@@ -1,12 +1,13 @@
 -- misc 
-vim.keymap.set('n', '<leader>qa', '<cmd>qa<cr>', { desc = 'Quit all' })
-vim.keymap.set('n', '<leader>qq', '<cmd>q<cr>',  { desc = 'Quit' })
-vim.keymap.set('n', '<leader>qw', '<cmd>wq<cr>', { desc = 'Save and quit' })
+vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
+vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
+vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
+vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
 
 -- window management
 vim.keymap.set('n', '<leader>w|', vim.cmd.vsplit)
 vim.keymap.set('n', '<leader>w-', vim.cmd.split)
-vim.keymap.set('n', '<leader>wx', vim.cmd.close)
+vim.keymap.set('n', '<leader>wd', vim.cmd.close)
 
 -- window navigation
 vim.keymap.set('n', '<leader>wh', '<C-w>h')
@@ -25,12 +26,28 @@ vim.keymap.set('n', '<C-Left>',  '<cmd>vertical resize -2<cr>', { desc = 'Decrea
 vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +2<cr>', { desc = 'Increase width' })
 
 -- telescope
-local tb = require('telescope.builtin')
-vim.keymap.set('n', '<leader>ff', tb.find_files, { desc = 'Find files' })
-vim.keymap.set('n', '<leader>gf', tb.git_files, { desc = 'Find git files' })
-vim.keymap.set('n', '<leader>fg', tb.live_grep,  { desc = 'Live grep' })
-vim.keymap.set('n', '<leader>fb', tb.buffers,    { desc = 'Buffers' })
-vim.keymap.set('n', '<leader>fh', tb.help_tags,  { desc = 'Help tags' })
+vim.keymap.set('n', '<leader>ff', function()
+  require('telescope.builtin').git_files({ 
+        prompt_title = 'Find git files',
+        show_untracked = true,
+      })
+end, { desc = 'Find git files' })
+vim.keymap.set('n', '<leader>faf', function()
+  require('telescope.builtin').find_files({ 
+        prompt_title = 'Find all files',
+        show_untracked = true,
+      })
+end, { desc = 'Find all files' })
+vim.keymap.set('n', '<leader>fgo', function()
+  require('telescope.builtin').live_grep({
+        prompt_title = 'Grep in open buffers',
+        grep_open_files = true,
+        show_untracked = true,
+      })
+end, { desc = 'Grep in open buffers' })
+vim.keymap.set('n', '<leader>fga', function()
+  require('telescope.builtin').live_grep({ prompt_title = 'Live grep all files' })
+end, { desc = 'Live grep all files' })
 
 -- crazy ass function. basically it finds by directory with fd (brew install fd)
 -- then it runs neotree to that directory so it opens in the file explorer
@@ -50,11 +67,43 @@ vim.keymap.set('n', '<leader>fd', function()
   })
 end, { desc = 'Find directory' })
 
+-- live grep in the current netoree directory
+vim.keymap.set('n', '<leader>gu', function()
+  -- Get the current Neo-tree root directory
+  local manager = require('neo-tree.sources.manager')
+  local state = manager.get_state('filesystem')
+  local root = state and state.path
+
+  if not root then
+    vim.notify('No Neo-tree directory open', vim.log.levels.WARN)
+    return
+  end
+
+  require('telescope.builtin').live_grep({ search_dirs = { root } })
+end, { desc = 'Grep in Neo-tree directory' })
+
 -- neotree
 vim.keymap.set('n', '<leader>nf', '<cmd>Neotree focus<cr>',  { desc = 'Focus explorer' })
 vim.keymap.set('n', '<leader>ne', '<cmd>Neotree toggle<cr>',   { desc = 'Show explorer' })
+vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal<cr>',   { desc = 'Reveal current file' })
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
   local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
   vim.cmd('Neotree toggle dir=' .. dir)
 end, { desc = 'File explorer' })
+
+-- folding
+vim.o.foldmethod = 'expr'
+-- Default to treesitter folding
+vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+-- Prefer LSP folding if client supports it
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(ev)
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+    if client:supports_method('textDocument/foldingRange') then
+      local win = vim.api.nvim_get_current_win()
+      vim.wo[win][0].foldexpr = 'v:lua.vim.lsp.foldexpr()'
+    end
+  end,
+})
+

@@ -2,6 +2,7 @@
 vim.opt.number = true          -- show line numbers
 vim.opt.relativenumber = true  -- relative numbers (great for jumping)
 
+
 -- indentation
 vim.opt.tabstop = 2            -- tab = 2 spaces
 vim.opt.shiftwidth = 2         -- indent = 2 spaces
@@ -19,6 +20,7 @@ vim.opt.scrolloff = 8          -- keep 8 lines above/below cursor
 vim.opt.signcolumn = 'yes'     -- always show sign column (prevents jumpiness)
 vim.opt.cursorline = true      -- highlight current line
 vim.opt.cmdheight = 0          -- hides it when not in use
+vim.opt.foldlevel = 99         -- default unfolded
 
 -- splits
 vim.opt.splitright = true      -- vsplit opens right
