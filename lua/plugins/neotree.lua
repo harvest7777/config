@@ -17,12 +17,13 @@ return {
       }
     },
     window = {
+      width = "25%",
       mappings = {
         ['l'] = 'open',
         ['h'] = 'close_node',
         ['E'] = 'expand_all_nodes',
         ['e'] = 'expand_all_subnodes',
       }
-    }
+    },
   }
 }

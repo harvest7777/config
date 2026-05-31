@@ -37,7 +37,7 @@ vim.diagnostic.config({
     spacing = 2,
     prefix = '■',
     format = function(diag)
-      return diag.message:sub(1, 60) .. (diag.message:len() > 60 and '...' or '')
+      return diag.message:sub(1, 60) .. (diag.message:len() > 55 and '...' or '')
     end,
   },
   signs = true,
