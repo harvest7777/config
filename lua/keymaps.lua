@@ -27,10 +27,10 @@ vim.keymap.set('n', '<leader>wK', '<C-w>K')
 vim.keymap.set('n', '<leader>wL', '<C-w>L')
 
 -- window resizing
-vim.keymap.set('n', '<C-Up>',    '<cmd>resize +2<cr>',          { desc = 'Increase height' })
-vim.keymap.set('n', '<C-Down>',  '<cmd>resize -2<cr>',          { desc = 'Decrease height' })
-vim.keymap.set('n', '<C-Left>',  '<cmd>vertical resize -2<cr>', { desc = 'Decrease width' })
-vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +2<cr>', { desc = 'Increase width' })
+vim.keymap.set('n', '<C-Up>',    '<cmd>resize +5<cr>',          { desc = 'Increase height' })
+vim.keymap.set('n', '<C-Down>',  '<cmd>resize -5<cr>',          { desc = 'Decrease height' })
+vim.keymap.set('n', '<C-Left>',  '<cmd>vertical resize -5<cr>', { desc = 'Decrease width' })
+vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +5<cr>', { desc = 'Increase width' })
 
 -- telescope
 vim.keymap.set('n', '<leader>ff', function()
