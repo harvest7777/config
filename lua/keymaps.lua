@@ -102,7 +102,7 @@ vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal_force_cwd<cr>',   { desc 
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
   local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
-  vim.cmd('Neotree toggle dir=' .. dir)
+  vim.cmd('Neotree dir=' .. dir)
 end, { desc = 'File explorer' })
 
 -- folding
