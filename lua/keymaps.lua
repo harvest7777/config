@@ -1,3 +1,11 @@
+vim.keymap.set('n', '<leader>fx', function()
+  require('telescope.builtin').live_grep({ 
+    prompt_title = 'Live grep git files',
+    show_untracked = true,
+    cwd = vim.fn.getcwd(),
+  })
+end, { desc = 'Live grep in current working directory' })
+
 -- misc 
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
@@ -58,16 +66,6 @@ vim.keymap.set('n', '<leader>fd', function()
   require('telescope.builtin').find_files({
     prompt_title = 'Find directories',
     find_command = { 'fd', '--type', 'd' },
-    attach_mappings = function(prompt_bufnr, map)
-      local actions = require('telescope.actions')
-      local action_state = require('telescope.actions.state')
-      actions.select_default:replace(function()
-        actions.close(prompt_bufnr)
-        local dir = action_state.get_selected_entry()[1]
-        vim.cmd('Neotree ' .. dir)
-      end)
-      return true
-    end
   })
 end, { desc = 'Find directory' })
 
@@ -89,7 +87,7 @@ end, { desc = 'Grep in Neo-tree directory' })
 -- neotree
 vim.keymap.set('n', '<leader>nf', '<cmd>Neotree focus<cr>',  { desc = 'Focus explorer' })
 vim.keymap.set('n', '<leader>ne', '<cmd>Neotree toggle<cr>',   { desc = 'Show explorer' })
-vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal<cr>',   { desc = 'Reveal current file' })
+vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal_force_cwd<cr>',   { desc = 'Reveal current file' })
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
   local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
