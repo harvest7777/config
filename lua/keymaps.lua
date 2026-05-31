@@ -80,6 +80,17 @@ vim.keymap.set('n', '<leader>fd', function()
   })
 end, { desc = 'Find directory' })
 
+vim.keymap.set('n', '<leader>fnd', function()
+  local state = require('neo-tree.sources.manager').get_state('filesystem')
+  local root = state and state.path or vim.fn.getcwd()
+
+  require('telescope.builtin').find_files({
+    prompt_title = 'Find directories (from ' .. vim.fn.fnamemodify(root, ':~') .. ')',
+    find_command = { 'fd', '--type', 'd', '--base-directory', root },
+    cwd = root,
+  })
+end, { desc = 'Find Neo-tree directory' })
+
 -- live grep in the current netoree directory
 vim.keymap.set('n', '<leader>gu', function()
   -- Get the current Neo-tree root directory
