@@ -1,16 +1,26 @@
-vim.keymap.set('n', '<leader>fx', function()
-  require('telescope.builtin').live_grep({ 
-    prompt_title = 'Live grep git files',
-    show_untracked = true,
-    cwd = vim.fn.getcwd(),
+local function get_neotree_root()
+  local ok, manager = pcall(require, "neo-tree.sources.manager")
+  if not ok then return nil end
+  local state = manager.get_state("filesystem")
+  return state and state.path or nil
+end
+
+vim.keymap.set('n', '<leader>fgn', function()
+  local dir = get_neotree_root() or vim.fn.getcwd()
+
+  require('telescope.builtin').live_grep({
+    prompt_title = 'Live grep in ' .. vim.fn.fnamemodify(dir, ':~'),
+    cwd = dir,
   })
-end, { desc = 'Live grep in current working directory' })
+end, { desc = 'Live grep in neo-tree root' })
 
 -- misc 
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
 vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
+vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = 'Dismiss Noice toasts' })
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'Clear search highlight' })
 
 -- window management
 vim.keymap.set('n', '<leader>w|', vim.cmd.vsplit)

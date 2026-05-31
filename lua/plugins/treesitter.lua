@@ -4,4 +4,7 @@ return
   lazy = false,
   build = ':TSUpdate',
   main = 'nvim-treesitter.configs',
+  opts = {
+    highlight = { enable = true },
+  },
 }
