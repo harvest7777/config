@@ -30,3 +30,4 @@ vim.opt.splitbelow = true      -- split opens below
 vim.opt.swapfile = false       -- no swap files
 vim.opt.undofile = true        -- persistent undo across sessions
 vim.opt.clipboard = 'unnamedplus'
+vim.opt.iskeyword:append("-")
