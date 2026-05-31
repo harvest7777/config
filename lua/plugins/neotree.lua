@@ -20,7 +20,8 @@ return {
       mappings = {
         ['l'] = 'open',
         ['h'] = 'close_node',
-        ["<leader>e"] = 'expand_all_nodes',
+        ['E'] = 'expand_all_nodes',
+        ['e'] = 'expand_all_subnodes',
       }
     }
   }

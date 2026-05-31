@@ -1,18 +1,3 @@
-local function get_neotree_root()
-  local ok, manager = pcall(require, "neo-tree.sources.manager")
-  if not ok then return nil end
-  local state = manager.get_state("filesystem")
-  return state and state.path or nil
-end
-
-vim.keymap.set('n', '<leader>fgn', function()
-  local dir = get_neotree_root() or vim.fn.getcwd()
-
-  require('telescope.builtin').live_grep({
-    prompt_title = 'Live grep in ' .. vim.fn.fnamemodify(dir, ':~'),
-    cwd = dir,
-  })
-end, { desc = 'Live grep in neo-tree root' })
 
 -- misc 
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
@@ -50,25 +35,37 @@ vim.keymap.set('n', '<leader>ff', function()
         show_untracked = true,
       })
 end, { desc = 'Find git files' })
+
 vim.keymap.set('n', '<leader>faf', function()
   require('telescope.builtin').find_files({ 
         prompt_title = 'Find all files',
         show_untracked = true,
       })
 end, { desc = 'Find all files' })
-vim.keymap.set('n', '<leader>fgo', function()
-  require('telescope.builtin').live_grep({
-        prompt_title = 'Grep in open buffers',
-        grep_open_files = true,
-        show_untracked = true,
-      })
-end, { desc = 'Grep in open buffers' })
+
+-- grep
 vim.keymap.set('n', '<leader>fgg', function()
   require('telescope.builtin').live_grep({ 
     prompt_title = 'Live grep git files',
     show_untracked = true,
   })
 end, { desc = 'Live grep all files' })
+
+local function get_neotree_root()
+  local ok, manager = pcall(require, "neo-tree.sources.manager")
+  if not ok then return nil end
+  local state = manager.get_state("filesystem")
+  return state and state.path or nil
+end
+
+vim.keymap.set('n', '<leader>fgn', function()
+  local dir = get_neotree_root() or vim.fn.getcwd()
+
+  require('telescope.builtin').live_grep({
+    prompt_title = 'Live grep in ' .. vim.fn.fnamemodify(dir, ':~'),
+    cwd = dir,
+  })
+end, { desc = 'Live grep in neo-tree root' })
 
 -- crazy ass function. basically it finds by directory with fd (brew install fd)
 -- then it runs neotree to that directory so it opens in the file explorer
