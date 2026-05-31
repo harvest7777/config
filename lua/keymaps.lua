@@ -45,14 +45,18 @@ vim.keymap.set('n', '<leader>fgo', function()
         show_untracked = true,
       })
 end, { desc = 'Grep in open buffers' })
-vim.keymap.set('n', '<leader>fga', function()
-  require('telescope.builtin').live_grep({ prompt_title = 'Live grep all files' })
+vim.keymap.set('n', '<leader>fgg', function()
+  require('telescope.builtin').live_grep({ 
+    prompt_title = 'Live grep git files',
+    show_untracked = true,
+  })
 end, { desc = 'Live grep all files' })
 
 -- crazy ass function. basically it finds by directory with fd (brew install fd)
 -- then it runs neotree to that directory so it opens in the file explorer
 vim.keymap.set('n', '<leader>fd', function()
-  tb.find_files({
+  require('telescope.builtin').find_files({
+    prompt_title = 'Find directories',
     find_command = { 'fd', '--type', 'd' },
     attach_mappings = function(prompt_bufnr, map)
       local actions = require('telescope.actions')
