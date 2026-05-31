@@ -4,8 +4,11 @@ vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
 vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
+
+-- noice 
 vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = 'Dismiss Noice toasts' })
-vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'Clear search highlight' })
+vim.keymap.set('n', '<leader>nl', '<cmd>Noice last<cr>', { desc = 'View last message' })
+vim.keymap.set('n', '<leader>na', '<cmd>Noice all<cr>', { desc = 'View all messages' })
 
 -- window management
 vim.keymap.set('n', '<leader>w|', vim.cmd.vsplit)
