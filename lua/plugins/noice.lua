@@ -18,13 +18,13 @@ return {
     },
     lsp = {
       progress = {
-        enabled = false,    -- kills the LSP spinner (most annoying thing)
+        enabled = false,    -- kills the LSP spinner
       },
       hover = {
-        enabled = false,    -- use default vim hover, noice's can be jumpy
+        enabled = false
       },
       signature = {
-        enabled = false,    -- same, let your LSP plugin handle this
+        enabled = false,
       },
     },
     notify = {
