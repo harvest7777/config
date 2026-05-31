@@ -31,3 +31,21 @@ vim.opt.swapfile = false       -- no swap files
 vim.opt.undofile = true        -- persistent undo across sessions
 vim.opt.clipboard = 'unnamedplus'
 vim.opt.iskeyword:append("-")
+
+vim.diagnostic.config({
+  virtual_text = {
+    spacing = 2,
+    prefix = '■',
+    format = function(diag)
+      return diag.message:sub(1, 60) .. (diag.message:len() > 60 and '...' or '')
+    end,
+  },
+  signs = true,
+  underline = true,
+  update_in_insert = false, -- no noise while typing
+  severity_sort = true,     -- errors before warnings
+  float = {
+    border = 'rounded',
+    source = true,           -- shows 'pyright' or 'lua_ls' etc
+  },
+})

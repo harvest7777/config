@@ -17,15 +17,16 @@ require('lazy').setup('plugins')  -- scans lua/plugins/ automatically
 require("options")
 require("keymaps")
 
-vim.lsp.config['lua_ls'] = {
+
+
+-- lua/lsp/lua_ls.lua
+vim.lsp.config('lua_ls', {
   cmd = { 'lua-language-server' },
   filetypes = { 'lua' },
   root_markers = { { '.luarc.json', '.luarc.jsonc' }, '.git' },
   settings = {
     Lua = {
-      runtime = {
-        version = 'LuaJIT',
-      },
+      runtime = { version = 'LuaJIT' },
       workspace = {
         library = vim.api.nvim_get_runtime_file("", true),
         checkThirdParty = false,
@@ -35,5 +36,21 @@ vim.lsp.config['lua_ls'] = {
       },
     }
   }
-}
+})
+
 vim.lsp.enable('lua_ls')
+
+vim.lsp.config('pyright', {
+  cmd = { 'pyright-langserver', '--stdio' },
+  filetypes = { 'python' },
+  root_markers = { 'pyproject.toml', 'setup.py', 'requirements.txt', '.git' },
+  settings = {
+    python = {
+      analysis = {
+        typeCheckingMode = 'basic',
+      }
+    }
+  }
+})
+
+vim.lsp.enable('pyright')
