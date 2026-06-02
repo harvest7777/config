@@ -64,7 +64,7 @@ local function get_neotree_root()
   return state and state.path or nil
 end
 
-vim.keymap.set('n', '<leader>ffn', function()
+vim.keymap.set('n', '<leader>fnf', function()
   local dir = get_neotree_root() or vim.fn.getcwd()
   require('telescope.builtin').find_files({
     prompt_title = 'Find files in ' .. vim.fn.fnamemodify(dir, ':~'),
