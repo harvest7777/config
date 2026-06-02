@@ -6,10 +6,10 @@ vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
 vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic' })
 vim.keymap.set('i', '<C-Space>', vim.lsp.buf.signature_help, { desc = 'Signature help' })
+vim.keymap.set("x", "<leader>p", [["_dP]])
 
 -- noice 
 vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = 'Dismiss Noice toasts' })
-vim.keymap.set('n', '<leader>nl', '<cmd>Noice last<cr>', { desc = 'View last message' })
 vim.keymap.set('n', '<leader>na', '<cmd>Noice all<cr>', { desc = 'View all messages' })
 
 -- window management
@@ -35,11 +35,12 @@ vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +5<cr>', { desc = 'Increa
 
 -- telescope
 vim.keymap.set('n', '<leader>ff', function()
-  require('telescope.builtin').git_files({ 
+  require('telescope.builtin').git_files({
         prompt_title = 'Find git files',
         show_untracked = true,
       })
 end, { desc = 'Find git files' })
+
 
 vim.keymap.set('n', '<leader>faf', function()
   require('telescope.builtin').find_files({ 
@@ -63,6 +64,13 @@ local function get_neotree_root()
   return state and state.path or nil
 end
 
+vim.keymap.set('n', '<leader>ffn', function()
+  local dir = get_neotree_root() or vim.fn.getcwd()
+  require('telescope.builtin').find_files({
+    prompt_title = 'Find files in ' .. vim.fn.fnamemodify(dir, ':~'),
+    cwd = dir,
+  })
+end, { desc = 'Find files in neo-tree root' })
 vim.keymap.set('n', '<leader>fgn', function()
   local dir = get_neotree_root() or vim.fn.getcwd()
 
@@ -92,20 +100,6 @@ vim.keymap.set('n', '<leader>fnd', function()
   })
 end, { desc = 'Find Neo-tree directory' })
 
--- live grep in the current netoree directory
-vim.keymap.set('n', '<leader>gu', function()
-  -- Get the current Neo-tree root directory
-  local manager = require('neo-tree.sources.manager')
-  local state = manager.get_state('filesystem')
-  local root = state and state.path
-
-  if not root then
-    vim.notify('No Neo-tree directory open', vim.log.levels.WARN)
-    return
-  end
-
-  require('telescope.builtin').live_grep({ search_dirs = { root } })
-end, { desc = 'Grep in Neo-tree directory' })
 
 -- neotree
 vim.keymap.set('n', '<leader>nf', '<cmd>Neotree focus<cr>',  { desc = 'Focus explorer' })
