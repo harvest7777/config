@@ -1,3 +1,9 @@
+local function get_neotree_root()
+  local ok, manager = pcall(require, "neo-tree.sources.manager")
+  if not ok then return nil end
+  local state = manager.get_state("filesystem")
+  return state and state.path or nil
+end
 
 -- misc 
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
@@ -37,62 +43,27 @@ vim.keymap.set('n', '<C-Left>',  '<cmd>vertical resize -5<cr>', { desc = 'Decrea
 vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +5<cr>', { desc = 'Increase width' })
 
 -- telescope
-vim.keymap.set('n', '<leader>ff', function()
-  require('telescope.builtin').git_files({
-        prompt_title = 'Find git files',
-        show_untracked = true,
-      })
-end, { desc = 'Find git files' })
-
-
-vim.keymap.set('n', '<leader>faf', function()
-  require('telescope.builtin').find_files({ 
-        prompt_title = 'Find all files',
-        show_untracked = true,
-      })
-end, { desc = 'Find all files' })
-
--- grep
-vim.keymap.set('n', '<leader>fgg', function()
-  require('telescope.builtin').live_grep({ 
-    prompt_title = 'Live grep git files',
-    show_untracked = true,
-  })
-end, { desc = 'Live grep all files' })
-
-local function get_neotree_root()
-  local ok, manager = pcall(require, "neo-tree.sources.manager")
-  if not ok then return nil end
-  local state = manager.get_state("filesystem")
-  return state and state.path or nil
-end
-
-vim.keymap.set('n', '<leader>fnf', function()
+vim.keymap.set('n', '<leader>fn', function()
   local dir = get_neotree_root() or vim.fn.getcwd()
   require('telescope.builtin').find_files({
     prompt_title = 'Find files in ' .. vim.fn.fnamemodify(dir, ':~'),
     cwd = dir,
   })
 end, { desc = 'Find files in neo-tree root' })
-vim.keymap.set('n', '<leader>fgn', function()
-  local dir = get_neotree_root() or vim.fn.getcwd()
+
+-- grep
+vim.keymap.set('n', '<leader>gn', function()
+  local state = require('neo-tree.sources.manager').get_state('filesystem')
+  local root = state and state.path or vim.fn.getcwd()
 
   require('telescope.builtin').live_grep({
-    prompt_title = 'Live grep in ' .. vim.fn.fnamemodify(dir, ':~'),
-    cwd = dir,
+    prompt_title = 'Live grep (from ' .. vim.fn.fnamemodify(root, ':~') .. ')',
+    search_dirs = { root },
   })
 end, { desc = 'Live grep in neo-tree root' })
 
--- crazy ass function. basically it finds by directory with fd (brew install fd)
 -- then it runs neotree to that directory so it opens in the file explorer
-vim.keymap.set('n', '<leader>fd', function()
-  require('telescope.builtin').find_files({
-    prompt_title = 'Find directories',
-    find_command = { 'fd', '--type', 'd' },
-  })
-end, { desc = 'Find directory' })
-
-vim.keymap.set('n', '<leader>fnd', function()
+vim.keymap.set('n', '<leader>dn', function()
   local state = require('neo-tree.sources.manager').get_state('filesystem')
   local root = state and state.path or vim.fn.getcwd()
 
@@ -110,9 +81,8 @@ vim.keymap.set('n', '<leader>ne', '<cmd>Neotree toggle<cr>',   { desc = 'Show ex
 vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal_force_cwd<cr>',   { desc = 'Reveal current file' })
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
-
   local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
-  vim.cmd('Neotree dir=' .. dir)
+  require('neo-tree.command').execute({ dir = dir, action = 'show' })
 end, { desc = 'File explorer' })
 
 -- folding
