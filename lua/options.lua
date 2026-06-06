@@ -32,6 +32,14 @@ vim.opt.undofile = true        -- persistent undo across sessions
 vim.opt.clipboard = 'unnamedplus'
 vim.opt.iskeyword:append("-")
 
+-- auto reload
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+  callback = function()
+    vim.cmd("checktime")
+  end,
+})
+
 vim.diagnostic.config({
   virtual_text = {
     spacing = 2,
