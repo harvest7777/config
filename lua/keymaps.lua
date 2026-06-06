@@ -10,10 +10,21 @@ vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
 vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
+
+-- lsp stuff
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic' })
 vim.keymap.set('i', '<C-Space>', vim.lsp.buf.signature_help, { desc = 'Signature help' })
+
+-- epic void register trick
 vim.keymap.set("x", "<leader>p", [["_dP]])
 
+-- close the current buffer without closing the window
+vim.keymap.set('n', '<leader>bd', ':bp|bd #<CR>')
+vim.keymap.set('n', '<leader>bb', require('telescope.builtin').buffers)
+vim.keymap.set('n', '<Tab>', '<cmd>b#<cr>')
+
+
+-- scrolling
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Scroll down and center' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Scroll up and center' })
 
