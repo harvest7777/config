@@ -5,29 +5,39 @@ local function get_neotree_root()
   return state and state.path or nil
 end
 
--- layzgit
-local function open_floating_term(cmd)
+-- lazygit
+local lazygit_buf = nil
+local function toggle_lazygit()
+  if lazygit_buf and vim.api.nvim_buf_is_valid(lazygit_buf) then
+    vim.api.nvim_buf_delete(lazygit_buf, { force = true })
+    lazygit_buf = nil
+    return
+  end
   local buf = vim.api.nvim_create_buf(false, true)
   local width = math.floor(vim.o.columns * 0.85)
   local height = math.floor(vim.o.lines * 0.85)
   vim.api.nvim_open_win(buf, true, {
     relative = "editor",
-    width = width,
-    height = height,
+    width = width, height = height,
     col = math.floor((vim.o.columns - width) / 2),
     row = math.floor((vim.o.lines - height) / 2),
     style = "minimal",
     border = "rounded",
   })
-  vim.fn.termopen(cmd or os.getenv("SHELL"), {
+  vim.api.nvim_set_current_buf(buf)
+  vim.fn.jobstart("lazygit", {
+    term = true,
     on_exit = function()
-      vim.api.nvim_buf_delete(buf, { force = true })
+      if vim.api.nvim_buf_is_valid(buf) then
+        vim.api.nvim_buf_delete(buf, { force = true })
+      end
+      lazygit_buf = nil
     end,
   })
+  lazygit_buf = buf
   vim.cmd("startinsert")
 end
-
-vim.keymap.set("n", "<leader>gg", function() open_floating_term("lazygit") end)
+vim.keymap.set("n", "<leader>gg", toggle_lazygit)
 
 -- misc 
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
