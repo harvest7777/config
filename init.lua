@@ -14,13 +14,11 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require('lazy').setup('plugins')  -- scans lua/plugins/ automatically
+require('lazy').setup('plugins') -- scans lua/plugins/ automatically
 require("options")
 require("keymaps")
 
-
-
--- lua/lsp/lua_ls.lua
+-- lsps
 vim.lsp.config('lua_ls', {
   cmd = { 'lua-language-server' },
   filetypes = { 'lua' },
@@ -55,3 +53,18 @@ vim.lsp.config('pyright', {
 })
 
 vim.lsp.enable('pyright')
+
+
+vim.lsp.config('yamlls', {
+  cmd = { 'yaml-language-server', '--stdio' },
+  filetypes = { 'yaml', 'yml' },
+  root_markers = { '.git' },
+  settings = {
+    yaml = {
+      schemas = {
+      }
+    }
+  }
+})
+
+vim.lsp.enable('yamlls')
