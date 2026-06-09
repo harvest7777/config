@@ -18,7 +18,8 @@ local function toggle_lazygit()
   local height = math.floor(vim.o.lines * 0.85)
   vim.api.nvim_open_win(buf, true, {
     relative = "editor",
-    width = width, height = height,
+    width = width,
+    height = height,
     col = math.floor((vim.o.columns - width) / 2),
     row = math.floor((vim.o.lines - height) / 2),
     style = "minimal",
@@ -39,8 +40,8 @@ local function toggle_lazygit()
 end
 vim.keymap.set("n", "<leader>gg", toggle_lazygit)
 
--- misc 
-vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>',  { desc = 'Write file' })
+-- misc
+vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
 vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
@@ -62,9 +63,10 @@ vim.keymap.set('n', '<Tab>', '<cmd>b#<cr>')
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Scroll down and center' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Scroll up and center' })
 
--- noice 
+-- noice
 vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = 'Dismiss Noice toasts' })
 vim.keymap.set('n', '<leader>na', '<cmd>Noice all<cr>', { desc = 'View all messages' })
+vim.keymap.set('n', '<leader>nl', '<cmd>Noice last<cr>', { desc = 'View last message' })
 
 -- window management
 vim.keymap.set('n', '<leader>w|', vim.cmd.vsplit)
@@ -82,9 +84,9 @@ vim.keymap.set('n', '<leader>wK', '<C-w>K')
 vim.keymap.set('n', '<leader>wL', '<C-w>L')
 
 -- window resizing
-vim.keymap.set('n', '<C-Up>',    '<cmd>resize +5<cr>',          { desc = 'Increase height' })
-vim.keymap.set('n', '<C-Down>',  '<cmd>resize -5<cr>',          { desc = 'Decrease height' })
-vim.keymap.set('n', '<C-Left>',  '<cmd>vertical resize -5<cr>', { desc = 'Decrease width' })
+vim.keymap.set('n', '<C-Up>', '<cmd>resize +5<cr>', { desc = 'Increase height' })
+vim.keymap.set('n', '<C-Down>', '<cmd>resize -5<cr>', { desc = 'Decrease height' })
+vim.keymap.set('n', '<C-Left>', '<cmd>vertical resize -5<cr>', { desc = 'Decrease width' })
 vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +5<cr>', { desc = 'Increase width' })
 
 -- telescope
@@ -121,9 +123,9 @@ end, { desc = 'Find Neo-tree directory' })
 
 
 -- neotree
-vim.keymap.set('n', '<leader>nf', '<cmd>Neotree focus<cr>',  { desc = 'Focus explorer' })
-vim.keymap.set('n', '<leader>ne', '<cmd>Neotree toggle<cr>',   { desc = 'Show explorer' })
-vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal_force_cwd<cr>',   { desc = 'Reveal current file' })
+vim.keymap.set('n', '<leader>nf', '<cmd>Neotree focus<cr>', { desc = 'Focus explorer' })
+vim.keymap.set('n', '<leader>ne', '<cmd>Neotree toggle<cr>', { desc = 'Show explorer' })
+vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal_force_cwd<cr>', { desc = 'Reveal current file' })
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
   local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
@@ -144,4 +146,3 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end
   end,
 })
-
