@@ -44,7 +44,8 @@ vim.keymap.set("n", "<leader>gg", toggle_lazygit)
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
-vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy current path' })
+vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy absolute path' })
+vim.keymap.set('n', '<leader>P', '<cmd>let @+ = fnamemodify(expand("%"), ":~:.")<cr>', { desc = 'Copy relative path' })
 
 -- lsp stuff
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic' })
