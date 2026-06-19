@@ -57,11 +57,7 @@ vim.keymap.set("x", "<leader>p", [["_dP]])
 -- close the current buffer without closing the window
 vim.keymap.set('n', '<leader>bd', ':bp|bd #<CR>')
 vim.keymap.set('n', '<leader>bb', function()
-  require('telescope.builtin').buffers({
-    filter_func = function(buf_id)
-      return vim.api.nvim_buf_get_name(buf_id) ~= ''
-    end,
-  })
+  require('telescope.builtin').buffers({ sort_mru = true })
 end)
 vim.keymap.set('n', '<Tab>', '<cmd>b#<cr>')
 
