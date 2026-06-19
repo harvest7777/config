@@ -47,6 +47,10 @@ vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
 vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy absolute path' })
 vim.keymap.set('n', '<leader>P', '<cmd>let @+ = fnamemodify(expand("%"), ":~:.")<cr>', { desc = 'Copy relative path' })
 
+-- gitsigns
+vim.keymap.set('n', ']c', function() require('gitsigns').next_hunk() end, { desc = 'Next hunk' })
+vim.keymap.set('n', '[c', function() require('gitsigns').prev_hunk() end, { desc = 'Prev hunk' })
+
 -- lsp stuff
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic' })
 vim.keymap.set('i', '<C-Space>', vim.lsp.buf.signature_help, { desc = 'Signature help' })
