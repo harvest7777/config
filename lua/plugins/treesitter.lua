@@ -1,11 +1,9 @@
-return
-{
+return {
   'nvim-treesitter/nvim-treesitter',
   lazy = false,
   build = ':TSUpdate',
-  main = 'nvim-treesitter.configs',
+  main = 'nvim-treesitter',
   opts = {
-    highlight = { enable = true },
-    indent = { enable = true },
+    ensure_installed = 'all',
   },
 }
