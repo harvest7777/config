@@ -90,24 +90,15 @@ vim.keymap.set('n', '<C-Down>', '<cmd>resize -5<cr>', { desc = 'Decrease height'
 vim.keymap.set('n', '<C-Left>', '<cmd>vertical resize -5<cr>', { desc = 'Decrease width' })
 vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +5<cr>', { desc = 'Increase width' })
 
--- telescope
+-- fff
 vim.keymap.set('n', '<leader>fn', function()
   local dir = get_neotree_root() or vim.fn.getcwd()
-  require('telescope.builtin').find_files({
-    prompt_title = 'Find files in ' .. vim.fn.fnamemodify(dir, ':~'),
-    cwd = dir,
-  })
+  require('fff').find_files_in_dir(dir)
 end, { desc = 'Find files in neo-tree root' })
 
--- grep
 vim.keymap.set('n', '<leader>gn', function()
-  local state = require('neo-tree.sources.manager').get_state('filesystem')
-  local root = state and state.path or vim.fn.getcwd()
-
-  require('telescope.builtin').live_grep({
-    prompt_title = 'Live grep (from ' .. vim.fn.fnamemodify(root, ':~') .. ')',
-    search_dirs = { root },
-  })
+  local dir = get_neotree_root() or vim.fn.getcwd()
+  require('fff').live_grep({ cwd = dir })
 end, { desc = 'Live grep in neo-tree root' })
 
 -- then it runs neotree to that directory so it opens in the file explorer
