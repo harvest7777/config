@@ -1,7 +1,5 @@
 return {
-  'MeanderingProgrammer/render-markdown.nvim',
-  ft = { 'markdown' },
-  opts = {
-    pipe_table = { style = 'full' },
-  },
+  'OXY2DEV/markview.nvim',
+  lazy = false,
+  opts = {},
 }
