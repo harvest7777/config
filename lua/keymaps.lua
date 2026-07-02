@@ -146,34 +146,25 @@ vim.keymap.set('n', '<leader>nr', function()
   require('neo-tree.command').execute({ dir = dir, action = 'show' })
 end, { desc = 'File explorer' })
 
--- markdown
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'markdown',
-  callback = function(ev)
-    local map = function(l, r, desc)
-      vim.keymap.set('n', l, r, { buffer = ev.buf, desc = desc })
-    end
+-- todos
+vim.keymap.set('n', '<leader>x', function()
+  local line = vim.api.nvim_get_current_line()
+  if line:match('%- %[x%]') then
+    vim.api.nvim_set_current_line(line:gsub('%- %[x%]', '- [ ]', 1))
+  elseif line:match('%- %[ %]') then
+    vim.api.nvim_set_current_line(line:gsub('%- %[ %]', '- [x]', 1))
+  end
+end, { desc = 'Toggle todo' })
 
-    map('<leader>x', function()
-      local line = vim.api.nvim_get_current_line()
-      if line:match('%- %[x%]') then
-        vim.api.nvim_set_current_line(line:gsub('%- %[x%]', '- [ ]', 1))
-      elseif line:match('%- %[ %]') then
-        vim.api.nvim_set_current_line(line:gsub('%- %[ %]', '- [x]', 1))
-      end
-    end, 'Toggle todo')
-
-    map('<leader>td', function()
-      local line = vim.api.nvim_get_current_line()
-      if line:match('^%s*$') then
-        vim.api.nvim_set_current_line('- [ ] ')
-      else
-        vim.api.nvim_set_current_line('- [ ] ' .. line)
-      end
-      vim.cmd('startinsert!')
-    end, 'Add todo')
-  end,
-})
+vim.keymap.set('n', '<leader>td', function()
+  local line = vim.api.nvim_get_current_line()
+  if line:match('^%s*$') then
+    vim.api.nvim_set_current_line('- [ ] ')
+  else
+    vim.api.nvim_set_current_line('- [ ] ' .. line)
+  end
+  vim.cmd('startinsert!')
+end, { desc = 'Add todo' })
 
 -- folding
 vim.o.foldmethod = 'expr'
