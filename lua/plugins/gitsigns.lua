@@ -2,14 +2,17 @@ return {
   'lewis6991/gitsigns.nvim',
   opts = {
     current_line_blame = true,
+    preview_config = {
+      border = 'rounded',
+      style = 'minimal',
+      row = 1,
+      col = 0,
+    },
     on_attach = function(bufnr)
       local gs = require('gitsigns')
       local map = function(mode, l, r, desc)
         vim.keymap.set(mode, l, r, { buffer = bufnr, desc = desc })
       end
-      map('n', ']c', gs.next_hunk, 'Next hunk')
-      map('n', '[c', gs.prev_hunk, 'Prev hunk')
-      map('n', '<leader>d', gs.preview_hunk_inline, 'Preview hunk inline')
       map('n', '<leader>hs', gs.stage_hunk, 'Stage hunk')
       map('n', '<leader>hr', gs.reset_hunk, 'Reset hunk')
       map('n', '<leader>hb', gs.blame_line, 'Blame line')
