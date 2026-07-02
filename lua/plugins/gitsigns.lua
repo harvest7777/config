@@ -2,6 +2,7 @@ return {
   'lewis6991/gitsigns.nvim',
   opts = {
     current_line_blame = true,
+    update_debounce = 50,
     on_attach = function(bufnr)
       local gs = require('gitsigns')
       local map = function(mode, l, r, desc)
