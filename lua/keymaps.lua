@@ -88,6 +88,7 @@ vim.keymap.set('n', '<leader>w-', vim.cmd.split)
 vim.keymap.set('n', '<leader>wd', vim.cmd.close)
 
 -- window navigation
+vim.keymap.set('n', '<leader>wn', '<C-w>w')
 vim.keymap.set('n', '<leader>wh', '<C-w>h')
 vim.keymap.set('n', '<leader>wj', '<C-w>j')
 vim.keymap.set('n', '<leader>wk', '<C-w>k')
