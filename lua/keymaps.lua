@@ -6,15 +6,28 @@ local function get_neotree_root()
 end
 
 -- lazygit
+local function goto_editor_win()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local cfg = vim.api.nvim_win_get_config(win)
+    local ft = vim.bo[vim.api.nvim_win_get_buf(win)].filetype
+    if cfg.relative == '' and ft ~= 'neo-tree' then
+      vim.api.nvim_set_current_win(win)
+      return
+    end
+  end
+end
+_G.goto_editor_win = goto_editor_win
+
 local function toggle_lazygit()
   if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
     vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
     _G.lazygit_buf = nil
     return
   end
+  goto_editor_win()
   local buf = vim.api.nvim_create_buf(false, true)
-  local width = math.floor(vim.o.columns * 0.85)
-  local height = math.floor(vim.o.lines * 0.85)
+  local width = math.floor(vim.o.columns * 0.95)
+  local height = math.floor(vim.o.lines * 0.95)
   vim.api.nvim_open_win(buf, true, {
     relative = "editor",
     width = width,

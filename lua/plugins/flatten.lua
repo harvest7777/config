@@ -11,6 +11,7 @@ return
           vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
           _G.lazygit_buf = nil
         end
+        if _G.goto_editor_win then _G.goto_editor_win() end
       end,
     },
   },
