@@ -7,6 +7,7 @@ return {
       style = 'minimal',
       row = 1,
       col = 0,
+      focusable = true,
     },
     on_attach = function(bufnr)
       local gs = require('gitsigns')
