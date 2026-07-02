@@ -16,7 +16,7 @@ return {
       end
       map('n', ']c', gs.next_hunk, 'Next hunk')
       map('n', '[c', gs.prev_hunk, 'Prev hunk')
-      map('n', '<leader>d', gs.preview_hunk_inline, 'Preview hunk inline')
+      map('n', '<leader>hd', gs.preview_hunk_inline, 'Preview hunk inline')
       map('n', '<leader>hs', gs.stage_hunk, 'Stage hunk')
       map('n', '<leader>hr', gs.reset_hunk, 'Reset hunk')
       map('n', '<leader>hb', gs.blame_line, 'Blame line')
