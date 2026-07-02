@@ -24,9 +24,9 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   callback = function(ev)
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
       if buf ~= ev.buf
-        and vim.fn.buflisted(buf) == 1
-        and vim.api.nvim_buf_get_name(buf) == ''
-        and not vim.bo[buf].modified
+          and vim.fn.buflisted(buf) == 1
+          and vim.api.nvim_buf_get_name(buf) == ''
+          and not vim.bo[buf].modified
       then
         local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
         if #lines == 0 or (#lines == 1 and lines[1] == '') then
@@ -72,7 +72,6 @@ vim.lsp.config('pyright', {
 })
 
 vim.lsp.enable('pyright')
-
 
 vim.lsp.config('yamlls', {
   cmd = { 'yaml-language-server', '--stdio' },
