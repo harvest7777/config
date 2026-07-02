@@ -6,28 +6,16 @@ local function get_neotree_root()
 end
 
 -- lazygit
-pre_open = function()
-  if _G.lazygit_win and vim.api.nvim_win_is_valid(_G.lazygit_win) then
-    vim.api.nvim_win_close(_G.lazygit_win, true)
-    _G.lazygit_win = nil
-  end
-  if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
-    vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
-    _G.lazygit_buf = nil
-  end
-end
-
 local function toggle_lazygit()
   if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
     vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
     _G.lazygit_buf = nil
-    _G.lazygit_win = nil
     return
   end
   local buf = vim.api.nvim_create_buf(false, true)
   local width = math.floor(vim.o.columns * 0.85)
   local height = math.floor(vim.o.lines * 0.85)
-  local win = vim.api.nvim_open_win(buf, true, {
+  vim.api.nvim_open_win(buf, true, {
     relative = "editor",
     width = width,
     height = height,
@@ -36,7 +24,6 @@ local function toggle_lazygit()
     style = "minimal",
     border = "rounded",
   })
-  vim.api.nvim_set_current_buf(buf)
   vim.fn.jobstart("lazygit", {
     term = true,
     on_exit = function()
@@ -44,11 +31,9 @@ local function toggle_lazygit()
         vim.api.nvim_buf_delete(buf, { force = true })
       end
       _G.lazygit_buf = nil
-      _G.lazygit_win = nil
     end,
   })
   _G.lazygit_buf = buf
-  _G.lazygit_win = win
   vim.cmd("startinsert")
 end
 vim.keymap.set("n", "<leader>gg", toggle_lazygit)
