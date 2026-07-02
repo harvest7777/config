@@ -149,19 +149,19 @@ end, { desc = 'File explorer' })
 -- todos
 vim.keymap.set('n', '<leader>x', function()
   local line = vim.api.nvim_get_current_line()
-  if line:match('%- %[x%]') then
-    vim.api.nvim_set_current_line(line:gsub('%- %[x%]', '- [ ]', 1))
-  elseif line:match('%- %[ %]') then
-    vim.api.nvim_set_current_line(line:gsub('%- %[ %]', '- [x]', 1))
+  if line:match('%[x%]') then
+    vim.api.nvim_set_current_line(line:gsub('%[x%]', '[ ]', 1))
+  elseif line:match('%[ %]') then
+    vim.api.nvim_set_current_line(line:gsub('%[ %]', '[x]', 1))
   end
 end, { desc = 'Toggle todo' })
 
 vim.keymap.set('n', '<leader>td', function()
   local line = vim.api.nvim_get_current_line()
   if line:match('^%s*$') then
-    vim.api.nvim_set_current_line('- [ ] ')
+    vim.api.nvim_set_current_line('[ ] ')
   else
-    vim.api.nvim_set_current_line('- [ ] ' .. line)
+    vim.api.nvim_set_current_line('[ ] ' .. line)
   end
   vim.cmd('startinsert!')
 end, { desc = 'Add todo' })
