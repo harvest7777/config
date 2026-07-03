@@ -60,7 +60,8 @@ vim.keymap.set('n', '<leader>P', '<cmd>let @+ = fnamemodify(expand("%"), ":~:.")
 
 -- lsp stuff
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic' })
-vim.keymap.set('i', '<C-Space>', function() vim.lsp.buf.signature_help({ border = 'rounded', max_width = 80 }) end, { desc = 'Signature help' })
+vim.keymap.set('i', '<C-Space>', function() vim.lsp.buf.signature_help({ border = 'rounded', max_width = 80 }) end,
+  { desc = 'Signature help' })
 
 vim.api.nvim_create_autocmd('LspAttach', {
   callback = function(ev)
@@ -75,7 +76,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
     map('<leader>rn', vim.lsp.buf.rename, 'Rename symbol')
     map('<leader>ca', vim.lsp.buf.code_action, 'Code action')
     map('[d', function() vim.diagnostic.jump({ count = -1, float = { border = 'rounded' } }) end, 'Prev diagnostic')
-    map(']d', function() vim.diagnostic.jump({ count = 1,  float = { border = 'rounded' } }) end, 'Next diagnostic')
+    map(']d', function() vim.diagnostic.jump({ count = 1, float = { border = 'rounded' } }) end, 'Next diagnostic')
   end,
 })
 
