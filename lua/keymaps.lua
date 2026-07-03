@@ -66,16 +66,14 @@ vim.keymap.set('i', '<C-Space>', vim.lsp.buf.signature_help, { desc = 'Signature
 vim.keymap.set("x", "<leader>p", [["_dP]])
 
 -- close the current buffer without closing the window
-vim.keymap.set('n', '<leader>bd', ':bp|bd #<CR>')
-vim.keymap.set('n', '<leader>bb', function()
-  require('telescope.builtin').buffers({ sort_mru = true })
-end)
 vim.keymap.set('n', '<Tab>', '<cmd>b#<cr>')
 
 
 -- scrolling
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Scroll down and center' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Scroll up and center' })
+vim.keymap.set('n', 'n', 'nzz', { desc = 'Next match and center' })
+vim.keymap.set('n', 'N', 'Nzz', { desc = 'Prev match and center' })
 
 -- noice
 vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = 'Dismiss Noice toasts' })
@@ -93,10 +91,6 @@ vim.keymap.set('n', '<leader>wh', '<C-w>h')
 vim.keymap.set('n', '<leader>wj', '<C-w>j')
 vim.keymap.set('n', '<leader>wk', '<C-w>k')
 vim.keymap.set('n', '<leader>wl', '<C-w>l')
-vim.keymap.set('n', '<leader>wH', '<C-w>H')
-vim.keymap.set('n', '<leader>wJ', '<C-w>J')
-vim.keymap.set('n', '<leader>wK', '<C-w>K')
-vim.keymap.set('n', '<leader>wL', '<C-w>L')
 
 -- window resizing
 vim.keymap.set('n', '<C-Up>', '<cmd>resize +5<cr>', { desc = 'Increase height' })
