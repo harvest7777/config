@@ -60,7 +60,24 @@ vim.keymap.set('n', '<leader>P', '<cmd>let @+ = fnamemodify(expand("%"), ":~:.")
 
 -- lsp stuff
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic' })
-vim.keymap.set('i', '<C-Space>', vim.lsp.buf.signature_help, { desc = 'Signature help' })
+vim.keymap.set('i', '<C-Space>', function() vim.lsp.buf.signature_help({ border = 'rounded', max_width = 80 }) end, { desc = 'Signature help' })
+
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(ev)
+    local map = function(keys, fn, desc)
+      vim.keymap.set('n', keys, fn, { buffer = ev.buf, desc = desc })
+    end
+    map('gd', vim.lsp.buf.definition, 'Go to definition')
+    map('gD', vim.lsp.buf.declaration, 'Go to declaration')
+    map('gr', vim.lsp.buf.references, 'Go to references')
+    map('gi', vim.lsp.buf.implementation, 'Go to implementation')
+    map('K', function() vim.lsp.buf.hover({ border = 'rounded', max_width = 80 }) end, 'Hover docs')
+    map('<leader>rn', vim.lsp.buf.rename, 'Rename symbol')
+    map('<leader>ca', vim.lsp.buf.code_action, 'Code action')
+    map('[d', function() vim.diagnostic.jump({ count = -1, float = { border = 'rounded' } }) end, 'Prev diagnostic')
+    map(']d', function() vim.diagnostic.jump({ count = 1,  float = { border = 'rounded' } }) end, 'Next diagnostic')
+  end,
+})
 
 -- epic void register trick
 vim.keymap.set("x", "<leader>p", [["_dP]])
@@ -72,6 +89,8 @@ vim.keymap.set('n', '<Tab>', '<cmd>b#<cr>')
 -- scrolling
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Scroll down and center' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Scroll up and center' })
+vim.keymap.set('n', 'j', 'jzz', { desc = 'Down and center' })
+vim.keymap.set('n', 'k', 'kzz', { desc = 'Up and center' })
 vim.keymap.set('n', 'n', 'nzz', { desc = 'Next match and center' })
 vim.keymap.set('n', 'N', 'Nzz', { desc = 'Prev match and center' })
 

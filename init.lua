@@ -86,3 +86,19 @@ vim.lsp.config('yamlls', {
 })
 
 vim.lsp.enable('yamlls')
+
+vim.lsp.config('jsonnet_ls', {
+  cmd = { vim.fn.expand('~/go/bin/jsonnet-language-server'), '-t' },
+  filetypes = { 'jsonnet', 'libsonnet' },
+  root_markers = { 'jsonnetfile.json', '.git' },
+})
+
+vim.lsp.enable('jsonnet_ls')
+
+vim.lsp.config('bashls', {
+  cmd = { 'bash-language-server', 'start' },
+  filetypes = { 'sh', 'bash' },
+  root_markers = { '.git' },
+})
+
+vim.lsp.enable('bashls')
