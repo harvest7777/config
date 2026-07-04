@@ -9,23 +9,24 @@ return {
   lazy = false,
   opts = {
     filesystem = {
+      hijack_netrw_behavior = 'open_current',
       use_libuv_file_watcher = true,
       bind_to_cwd = false,
       filtered_items = {
-        visible = false, -- show hidden items but dimmed
+        visible = false,
         hide_dotfiles = true,
         hide_gitignored = true,
       }
     },
     window = {
-      width = "25%",
+      position = 'current',
       mappings = {
         ['l'] = 'open',
         ['h'] = 'close_node',
         ['E'] = 'expand_all_nodes',
         ['e'] = 'expand_all_subnodes',
-        ['/'] = "noop",
-        ['f'] = "noop",
+        ['/'] = 'noop',
+        ['f'] = 'noop',
       }
     },
   }
