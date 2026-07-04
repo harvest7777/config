@@ -6,6 +6,11 @@ return {
     ui = {
       backdrop = 100,
     },
+    highlight_hovered_buffers_in_same_directory = false,
+    highlight_groups = {
+      hovered_buffer = {},
+      hovered_buffer_in_same_directory = {},
+    },
     keymaps = {
       show_help = '<f1>',
       open_file_in_vertical_split = '<c-v>',
