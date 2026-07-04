@@ -17,6 +17,7 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup('plugins') -- scans lua/plugins/ automatically
 require("options")
 require("keymaps")
+require("lsp")
 
 -- delete the empty startup buffer once a real file is opened
 vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
@@ -37,68 +38,9 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   end,
 })
 
--- lsps
-vim.lsp.config('lua_ls', {
-  cmd = { 'lua-language-server' },
-  filetypes = { 'lua' },
-  root_markers = { { '.luarc.json', '.luarc.jsonc' }, '.git' },
-  settings = {
-    Lua = {
-      runtime = { version = 'LuaJIT' },
-      workspace = {
-        library = vim.api.nvim_get_runtime_file("", true),
-        checkThirdParty = false,
-      },
-      diagnostics = {
-        globals = { 'vim' },
-      },
-    }
-  }
-})
-
 vim.lsp.enable('lua_ls')
-
-vim.lsp.config('pyright', {
-  cmd = { 'pyright-langserver', '--stdio' },
-  filetypes = { 'python' },
-  root_markers = { 'pyproject.toml', 'setup.py', 'requirements.txt', '.git' },
-  settings = {
-    python = {
-      analysis = {
-        typeCheckingMode = 'basic',
-      }
-    }
-  }
-})
-
 vim.lsp.enable('pyright')
-
-vim.lsp.config('yamlls', {
-  cmd = { 'yaml-language-server', '--stdio' },
-  filetypes = { 'yaml', 'yml' },
-  root_markers = { '.git' },
-  settings = {
-    yaml = {
-      schemas = {
-      }
-    }
-  }
-})
-
 vim.lsp.enable('yamlls')
-
-vim.lsp.config('jsonnet_ls', {
-  cmd = { vim.fn.expand('~/go/bin/jsonnet-language-server'), '-t' },
-  filetypes = { 'jsonnet', 'libsonnet' },
-  root_markers = { 'jsonnetfile.json', '.git' },
-})
-
 vim.lsp.enable('jsonnet_ls')
-
-vim.lsp.config('bashls', {
-  cmd = { 'bash-language-server', 'start' },
-  filetypes = { 'sh', 'bash' },
-  root_markers = { '.git' },
-})
-
 vim.lsp.enable('bashls')
+vim.lsp.enable('clangd')
