@@ -1,16 +1,8 @@
-local function get_neotree_root()
-  local ok, manager = pcall(require, "neo-tree.sources.manager")
-  if not ok then return nil end
-  local state = manager.get_state("filesystem")
-  return state and state.path or nil
-end
-
 -- lazygit
 local function goto_editor_win()
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     local cfg = vim.api.nvim_win_get_config(win)
-    local ft = vim.bo[vim.api.nvim_win_get_buf(win)].filetype
-    if cfg.relative == '' and ft ~= 'neo-tree' then
+    if cfg.relative == '' then
       vim.api.nvim_set_current_win(win)
       return
     end
@@ -120,46 +112,41 @@ vim.keymap.set('n', '<C-Right>', '<cmd>vertical resize +5<cr>', { desc = 'Increa
 
 -- telescope
 vim.keymap.set('n', '<leader>fn', function()
-  local dir = get_neotree_root() or vim.fn.getcwd()
+  local dir = vim.fn.getcwd()
   require('telescope.builtin').find_files({
     prompt_title = 'Find files in ' .. vim.fn.fnamemodify(dir, ':~'),
     cwd = dir,
   })
-end, { desc = 'Find files in neo-tree root' })
+end, { desc = 'Find files in cwd' })
 
 -- grep
 vim.keymap.set('n', '<leader>gn', function()
-  local state = require('neo-tree.sources.manager').get_state('filesystem')
-  local root = state and state.path or vim.fn.getcwd()
-
+  local root = vim.fn.getcwd()
   require('telescope.builtin').live_grep({
     prompt_title = 'Live grep (from ' .. vim.fn.fnamemodify(root, ':~') .. ')',
     search_dirs = { root },
   })
-end, { desc = 'Live grep in neo-tree root' })
+end, { desc = 'Live grep in cwd' })
 
--- then it runs neotree to that directory so it opens in the file explorer
 vim.keymap.set('n', '<leader>dn', function()
-  local state = require('neo-tree.sources.manager').get_state('filesystem')
-  local root = state and state.path or vim.fn.getcwd()
-
+  local root = vim.fn.getcwd()
   require('telescope.builtin').find_files({
     prompt_title = 'Find directories (from ' .. vim.fn.fnamemodify(root, ':~') .. ')',
     find_command = { 'fd', '--type', 'd', '--base-directory', root },
     cwd = root,
   })
-end, { desc = 'Find Neo-tree directory' })
+end, { desc = 'Find directory in cwd' })
 
 
--- neotree
-vim.keymap.set('n', '<leader>nf', '<cmd>Neotree focus<cr>', { desc = 'Focus explorer' })
-vim.keymap.set('n', '<leader>ne', '<cmd>Neotree toggle<cr>', { desc = 'Show explorer' })
-vim.keymap.set('n', '<leader>no', '<cmd>Neotree reveal_force_cwd<cr>', { desc = 'Reveal current file' })
+-- yazi
+vim.keymap.set('n', '<leader>nf', '<cmd>Yazi<cr>', { desc = 'Open file explorer' })
+vim.keymap.set('n', '<leader>ne', '<cmd>Yazi toggle<cr>', { desc = 'Toggle file explorer' })
+vim.keymap.set('n', '<leader>no', '<cmd>Yazi<cr>', { desc = 'Reveal current file' })
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
   local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
-  require('neo-tree.command').execute({ dir = dir, action = 'show' })
-end, { desc = 'File explorer' })
+  require('yazi').yazi(nil, dir)
+end, { desc = 'Open explorer at git root' })
 
 -- todos
 vim.keymap.set('n', '<leader>x', function()
