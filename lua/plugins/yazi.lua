@@ -3,6 +3,9 @@ return {
   event = 'VeryLazy',
   opts = {
     open_for_directories = true,
+    ui = {
+      backdrop = 100,
+    },
     keymaps = {
       show_help = '<f1>',
       open_file_in_vertical_split = '<c-v>',
