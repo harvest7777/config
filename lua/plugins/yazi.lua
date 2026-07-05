@@ -3,9 +3,6 @@ return {
   event = 'VeryLazy',
   opts = {
     open_for_directories = true,
-    ui = {
-      backdrop = 100,
-    },
     highlight_hovered_buffers_in_same_directory = false,
     keymaps = {
       show_help = '<f1>',
