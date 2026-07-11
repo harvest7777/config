@@ -41,7 +41,7 @@ local function toggle_lazygit()
   _G.lazygit_buf = buf
   vim.cmd("startinsert")
 end
-vim.keymap.set("n", "<leader>gg", toggle_lazygit)
+-- vim.keymap.set("n", "<leader>gg", toggle_lazygit)
 
 -- misc
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = 'Write file' })
