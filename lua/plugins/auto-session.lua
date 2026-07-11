@@ -3,6 +3,14 @@ return {
   event = 'BufReadPre',
   opts = {},
   init = function()
+    -- close diffview before saving so its tab/scratch buffers aren't
+    -- included in the session (same class of issue as the old neo-tree hook)
+    vim.api.nvim_create_autocmd('VimLeavePre', {
+      callback = function()
+        pcall(vim.cmd, 'DiffviewClose')
+      end,
+    })
+
     -- auto-restore session on startup (only when opened with no file args)
     vim.api.nvim_create_autocmd('VimEnter', {
       nested = true,

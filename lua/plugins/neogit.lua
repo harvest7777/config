@@ -50,5 +50,30 @@ return
       group = vim.api.nvim_create_augroup("NeogitFlattenContextHl", { clear = true }),
       callback = flatten_context_hl,
     })
+
+    -- diffview always opens its diff/conflict UI in a new tab (no "replace
+    -- window" mode exists). Hide the tabline while it's open so it doesn't
+    -- visually register as a tab-switch; restore it once the view closes.
+    --
+    -- Hook diffview's emitter directly rather than calling its setup() --
+    -- setup() also wires this up, but its config re-init previously broke
+    -- the conflict view's ours/theirs content. DiffviewGlobal is a real _G
+    -- global set the moment any diffview module loads, no setup() required.
+    local has_diffview = pcall(require, "diffview")
+    if has_diffview and _G.DiffviewGlobal then
+      local saved_showtabline
+
+      DiffviewGlobal.emitter:on("view_opened", function()
+        saved_showtabline = vim.o.showtabline
+        vim.o.showtabline = 0
+      end)
+
+      DiffviewGlobal.emitter:on("view_closed", function()
+        if saved_showtabline ~= nil then
+          vim.o.showtabline = saved_showtabline
+          saved_showtabline = nil
+        end
+      end)
+    end
   end,
 }
