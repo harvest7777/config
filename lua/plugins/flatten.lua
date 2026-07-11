@@ -5,14 +5,15 @@ return
   priority = 1001,
   opts = {
     window = { open = "current" },
-    hooks = {
-      pre_open = function()
-        if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
-          vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
-          _G.lazygit_buf = nil
-        end
-        if _G.goto_editor_win then _G.goto_editor_win() end
-      end,
-    },
+    -- lazygit
+    -- hooks = {
+    --   pre_open = function()
+    --     if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
+    --       vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
+    --       _G.lazygit_buf = nil
+    --     end
+    --     if _G.goto_editor_win then _G.goto_editor_win() end
+    --   end,
+    -- },
   },
 }

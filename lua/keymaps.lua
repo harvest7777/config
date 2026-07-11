@@ -1,46 +1,46 @@
 -- lazygit
-local function goto_editor_win()
-  for _, win in ipairs(vim.api.nvim_list_wins()) do
-    local cfg = vim.api.nvim_win_get_config(win)
-    if cfg.relative == '' then
-      vim.api.nvim_set_current_win(win)
-      return
-    end
-  end
-end
-_G.goto_editor_win = goto_editor_win
-
-local function toggle_lazygit()
-  if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
-    vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
-    _G.lazygit_buf = nil
-    return
-  end
-  goto_editor_win()
-  local buf = vim.api.nvim_create_buf(false, true)
-  local width = math.floor(vim.o.columns * 0.95)
-  local height = math.floor(vim.o.lines * 0.95)
-  vim.api.nvim_open_win(buf, true, {
-    relative = "editor",
-    width = width,
-    height = height,
-    col = math.floor((vim.o.columns - width) / 2),
-    row = math.floor((vim.o.lines - height) / 2),
-    style = "minimal",
-    border = "rounded",
-  })
-  vim.fn.jobstart("lazygit", {
-    term = true,
-    on_exit = function()
-      if vim.api.nvim_buf_is_valid(buf) then
-        vim.api.nvim_buf_delete(buf, { force = true })
-      end
-      _G.lazygit_buf = nil
-    end,
-  })
-  _G.lazygit_buf = buf
-  vim.cmd("startinsert")
-end
+-- local function goto_editor_win()
+--   for _, win in ipairs(vim.api.nvim_list_wins()) do
+--     local cfg = vim.api.nvim_win_get_config(win)
+--     if cfg.relative == '' then
+--       vim.api.nvim_set_current_win(win)
+--       return
+--     end
+--   end
+-- end
+-- _G.goto_editor_win = goto_editor_win
+--
+-- local function toggle_lazygit()
+--   if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
+--     vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
+--     _G.lazygit_buf = nil
+--     return
+--   end
+--   goto_editor_win()
+--   local buf = vim.api.nvim_create_buf(false, true)
+--   local width = math.floor(vim.o.columns * 0.95)
+--   local height = math.floor(vim.o.lines * 0.95)
+--   vim.api.nvim_open_win(buf, true, {
+--     relative = "editor",
+--     width = width,
+--     height = height,
+--     col = math.floor((vim.o.columns - width) / 2),
+--     row = math.floor((vim.o.lines - height) / 2),
+--     style = "minimal",
+--     border = "rounded",
+--   })
+--   vim.fn.jobstart("lazygit", {
+--     term = true,
+--     on_exit = function()
+--       if vim.api.nvim_buf_is_valid(buf) then
+--         vim.api.nvim_buf_delete(buf, { force = true })
+--       end
+--       _G.lazygit_buf = nil
+--     end,
+--   })
+--   _G.lazygit_buf = buf
+--   vim.cmd("startinsert")
+-- end
 -- vim.keymap.set("n", "<leader>gg", toggle_lazygit)
 
 -- misc
