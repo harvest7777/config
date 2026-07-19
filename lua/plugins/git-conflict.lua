@@ -1,12 +1,30 @@
 return {
   'akinsho/git-conflict.nvim',
-  event = 'VeryLazy',
+  -- must be loaded before VimEnter/BufRead fire for the first buffer, since
+  -- those are what it hooks to detect conflicts (VeryLazy fires too late).
+  lazy = false,
   dependencies = { 'catppuccin/nvim' },
   config = function()
     require('git-conflict').setup({
       default_mappings = true,
       default_commands = true,
-      disable_diagnostics = false,
+      -- NOT disable_diagnostics=true: the plugin implements it via
+      -- vim.diagnostic.disable(), removed in nvim 0.12. That throws and
+      -- aborts the GitConflictDetected callback before it reaches the
+      -- buffer-local co/ct mapping setup later in the same function, so it
+      -- silently breaks both features. Replicate it below instead.
+    })
+
+    local diag_group = vim.api.nvim_create_augroup('GitConflictDiagnostics', { clear = true })
+    vim.api.nvim_create_autocmd('User', {
+      pattern = 'GitConflictDetected',
+      group = diag_group,
+      callback = function() vim.diagnostic.enable(false, { bufnr = vim.api.nvim_get_current_buf() }) end,
+    })
+    vim.api.nvim_create_autocmd('User', {
+      pattern = 'GitConflictResolved',
+      group = diag_group,
+      callback = function() vim.diagnostic.enable(true, { bufnr = vim.api.nvim_get_current_buf() }) end,
     })
 
     -- git-conflict derives its marker-line "label" highlights by *lightening*
