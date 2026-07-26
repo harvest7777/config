@@ -47,8 +47,32 @@
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
-vim.keymap.set('n', '<leader>p', '<cmd>let @+ = expand("%:p")<cr>', { desc = 'Copy absolute path' })
-vim.keymap.set('n', '<leader>P', '<cmd>let @+ = fnamemodify(expand("%"), ":~:.")<cr>', { desc = 'Copy relative path' })
+-- Neogit's "view file at old commit" buffers are named
+-- neogit://<sha>/<path-relative-to-repo-root>, not a real filesystem path,
+-- so expand("%:p") on them just returns garbage. Resolve to the real path
+-- on disk in that case; everywhere else, behave exactly as before.
+local function real_path_for_current_buffer()
+  local name = vim.api.nvim_buf_get_name(0)
+  local rel = name:match("^neogit://[^/]+/(.+)$")
+  if not rel then
+    return nil
+  end
+  local root = vim.trim(vim.fn.system("git rev-parse --show-toplevel"))
+  if vim.v.shell_error ~= 0 or root == "" then
+    return nil
+  end
+  return root .. "/" .. rel
+end
+
+vim.keymap.set('n', '<leader>p', function()
+  vim.fn.setreg("+", real_path_for_current_buffer() or vim.fn.expand("%:p"))
+end, { desc = 'Copy absolute path' })
+
+vim.keymap.set('n', '<leader>P', function()
+  local abs = real_path_for_current_buffer()
+  local rel = abs and vim.fn.fnamemodify(abs, ":~:.") or vim.fn.fnamemodify(vim.fn.expand("%"), ":~:.")
+  vim.fn.setreg("+", rel)
+end, { desc = 'Copy relative path' })
 
 -- toggles
 vim.keymap.set('n', '<leader>lb', function()

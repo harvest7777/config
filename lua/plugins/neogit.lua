@@ -37,6 +37,50 @@ return
   config = function(_, opts)
     require("neogit").setup(opts)
 
+    -- Persist the status buffer's fold state (which sections are
+    -- expanded/collapsed) across full Neovim restarts, keyed by repo path.
+    -- Pure vim.fn.stdpath/vim.json/io -- no shell-outs, so it behaves the
+    -- same on macOS and Linux.
+    local fold_cache_path = vim.fs.joinpath(vim.fn.stdpath("state"), "neogit_fold_state.json")
+
+    local function read_fold_cache()
+      local f = io.open(fold_cache_path, "r")
+      if not f then
+        return {}
+      end
+      local content = f:read("*a")
+      f:close()
+      if content == "" then
+        return {}
+      end
+      local ok, data = pcall(vim.json.decode, content)
+      if not ok or type(data) ~= "table" then
+        return {}
+      end
+      return data
+    end
+
+    local function persist_fold_state(cwd, fold_state)
+      if not cwd or not fold_state or vim.tbl_isempty(fold_state) then
+        return
+      end
+      local data = read_fold_cache()
+      data[cwd] = fold_state
+      local f = io.open(fold_cache_path, "w")
+      if not f then
+        return
+      end
+      f:write(vim.json.encode(data))
+      f:close()
+    end
+
+    local function load_fold_state(cwd)
+      if not cwd then
+        return nil
+      end
+      return read_fold_cache()[cwd]
+    end
+
     -- Every Neogit UI buffer (status, commit view, log view, popups, ...)
     -- defaults to bufhidden=wipe. A "replace"-kind view swaps the previous
     -- buffer out of its window via nvim_set_current_buf without closing it
@@ -100,6 +144,18 @@ return
       pattern = "NeogitStatus",
       group = vim.api.nvim_create_augroup("NeogitPreserveFoldState", { clear = true }),
       callback = function(args)
+        do
+          local ok, status = pcall(require, "neogit.buffers.status")
+          if ok then
+            local inst = status.instance()
+            -- Seed a brand-new instance (nothing captured yet this session)
+            -- from the on-disk cache left by a previous Neovim session.
+            if inst and not inst.fold_state then
+              inst.fold_state = load_fold_state(inst.cwd)
+            end
+          end
+        end
+
         vim.api.nvim_create_autocmd("BufWinLeave", {
           buffer = args.buf,
           once = true,
@@ -116,9 +172,28 @@ return
               -- still read the right place.
               inst.cursor_state = inst.buffer:cursor_line()
               inst.view_state = inst.buffer:save_view()
+              persist_fold_state(inst.cwd, inst.fold_state)
             end
           end,
         })
+      end,
+    })
+
+    -- Covers quitting Neovim outright while the status buffer is still open
+    -- (folds toggled, but BufWinLeave above never fired).
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+      group = vim.api.nvim_create_augroup("NeogitPersistFoldStateOnExit", { clear = true }),
+      callback = function()
+        local ok, status = pcall(require, "neogit.buffers.status")
+        if not ok then
+          return
+        end
+        local inst = status.instance()
+        if not inst then
+          return
+        end
+        local fold_state = (inst.buffer and inst.buffer.ui and inst.buffer.ui:get_fold_state()) or inst.fold_state
+        persist_fold_state(inst.cwd, fold_state)
       end,
     })
 
