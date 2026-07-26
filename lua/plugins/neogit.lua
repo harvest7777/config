@@ -1,3 +1,4 @@
+-- noop
 return
 {
   "NeogitOrg/neogit",
