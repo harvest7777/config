@@ -74,6 +74,74 @@ vim.keymap.set('n', '<leader>P', function()
   vim.fn.setreg("+", rel)
 end, { desc = 'Copy relative path' })
 
+-- Builds a PR/MR link for the current branch purely from local git state
+-- (remote URL + branch name) -- no HTTP requests, just string construction.
+-- Any host that isn't github.com/bitbucket.org/*gitlab* is assumed to be a
+-- self-hosted Bitbucket Server (Stash) instance.
+local function pr_link()
+  local remote = vim.trim(vim.fn.system("git remote get-url origin"))
+  if vim.v.shell_error ~= 0 or remote == "" then
+    vim.notify("No 'origin' remote found", vim.log.levels.WARN)
+    return nil
+  end
+
+  local branch = vim.trim(vim.fn.system("git rev-parse --abbrev-ref HEAD"))
+  if vim.v.shell_error ~= 0 or branch == "" or branch == "HEAD" then
+    vim.notify("Not on a branch (detached HEAD?)", vim.log.levels.WARN)
+    return nil
+  end
+
+  remote = remote:gsub("%.git$", "")
+
+  local host, path
+  if remote:match("^git@") then
+    host, path = remote:match("^git@([^:]+):(.+)$")
+  elseif remote:match("^ssh://") then
+    host, path = remote:match("^ssh://[^@/]+@([^:/]+):?%d*/(.+)$")
+  elseif remote:match("^https?://") then
+    host, path = remote:match("^https?://([^/]+)/(.+)$")
+    if host then
+      host = host:gsub("^.-@", "") -- drop any embedded credentials
+    end
+  end
+
+  if not (host and path) then
+    vim.notify("Couldn't parse remote URL: " .. remote, vim.log.levels.WARN)
+    return nil
+  end
+
+  local encoded_branch = branch:gsub("[^%w%-%._/]", function(c)
+    return string.format("%%%02X", string.byte(c))
+  end)
+
+  if host == "github.com" then
+    return ("https://github.com/%s/pull/new/%s"):format(path, encoded_branch)
+  elseif host == "bitbucket.org" then
+    return ("https://bitbucket.org/%s/pull-requests/new?source=%s&t=1"):format(path, encoded_branch)
+  elseif host:find("gitlab", 1, true) then
+    return ("https://%s/%s/-/merge_requests/new?merge_request[source_branch]=%s"):format(host, path, encoded_branch)
+  else
+    -- Bitbucket Server / Stash. HTTPS clone URLs route through
+    -- /scm/<PROJECT>/<repo>; strip that to get PROJECT/repo.
+    path = path:gsub("^scm/", "")
+    local project, repo = path:match("^([^/]+)/(.+)$")
+    if not (project and repo) then
+      vim.notify("Couldn't parse project/repo from: " .. path, vim.log.levels.WARN)
+      return nil
+    end
+    return ("https://%s/projects/%s/repos/%s/pull-requests?create&sourceBranch=refs/heads/%s")
+      :format(host, project, repo, encoded_branch)
+  end
+end
+
+vim.keymap.set('n', '<leader>gp', function()
+  local link = pr_link()
+  if link then
+    vim.fn.setreg("+", link)
+    vim.notify("Copied: " .. link)
+  end
+end, { desc = 'Copy PR/MR link for current branch' })
+
 -- toggles
 vim.keymap.set('n', '<leader>lb', function()
   vim.wo.wrap = not vim.wo.wrap
