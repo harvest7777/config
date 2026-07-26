@@ -1,3 +1,5 @@
+-- noop
+-- another nopop
 return
 {
   "NeogitOrg/neogit",
