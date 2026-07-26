@@ -237,8 +237,6 @@ end, { desc = 'Find directory in cwd' })
 
 
 -- yazi
-vim.keymap.set('n', '<leader>nf', '<cmd>Yazi<cr>', { desc = 'Open file explorer' })
-vim.keymap.set('n', '<leader>ne', '<cmd>Yazi toggle<cr>', { desc = 'Toggle file explorer' })
 vim.keymap.set('n', '<leader>no', '<cmd>Yazi<cr>', { desc = 'Reveal current file' })
 vim.keymap.set('n', '<leader>nr', function()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
