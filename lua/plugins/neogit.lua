@@ -37,6 +37,35 @@ return
   config = function(_, opts)
     require("neogit").setup(opts)
 
+    -- Neogit only saves the status buffer's fold/cursor state when
+    -- StatusBuffer:close() runs. Drilling from "Recent Commits" into a
+    -- commit and then a file swaps the window's buffer directly
+    -- (nvim_set_current_buf), bypassing close() entirely -- so on the way
+    -- back Neogit finds the old buffer hidden, rebuilds it from scratch,
+    -- and every section resets to its configured default fold state.
+    -- Capture the state ourselves as soon as the buffer loses its window,
+    -- so it's there to restore no matter how we got away from it.
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "NeogitStatus",
+      group = vim.api.nvim_create_augroup("NeogitPreserveFoldState", { clear = true }),
+      callback = function(args)
+        vim.api.nvim_create_autocmd("BufWinLeave", {
+          buffer = args.buf,
+          once = true,
+          callback = function()
+            local ok, status = pcall(require, "neogit.buffers.status")
+            if not ok then
+              return
+            end
+            local inst = status.instance()
+            if inst and inst.buffer and inst.buffer.ui then
+              inst.fold_state = inst.buffer.ui:get_fold_state()
+            end
+          end,
+        })
+      end,
+    })
+
     -- Context (unchanged) lines in expanded diffs default to a shaded
     -- background; flatten them to match Normal so only +/- lines stand out.
     local function flatten_context_hl()
