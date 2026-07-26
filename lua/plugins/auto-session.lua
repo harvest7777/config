@@ -3,14 +3,13 @@ return {
   event = 'BufReadPre',
   opts = {},
   init = function()
-    -- close diffview and neogit before saving so their scratch buffers
-    -- aren't captured in the session in place of whatever real file was
-    -- open before they took over the window (same class of issue as the
-    -- old neo-tree hook). Neogit's status buffer is "replace" kind, so
-    -- closing it restores the real underlying buffer into the window.
+    -- close neogit before saving so its scratch status buffer isn't
+    -- captured in the session in place of whatever real file was open
+    -- before it took over the window (same class of issue as the old
+    -- neo-tree hook). Neogit's status buffer is "replace" kind, so closing
+    -- it restores the real underlying buffer into the window.
     vim.api.nvim_create_autocmd('VimLeavePre', {
       callback = function()
-        pcall(vim.cmd, 'DiffviewClose')
         if package.loaded['neogit'] then
           pcall(require('neogit').close)
         end
