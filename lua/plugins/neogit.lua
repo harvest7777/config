@@ -37,6 +37,57 @@ return
   config = function(_, opts)
     require("neogit").setup(opts)
 
+    -- Every Neogit UI buffer (status, commit view, log view, popups, ...)
+    -- defaults to bufhidden=wipe. A "replace"-kind view swaps the previous
+    -- buffer out of its window via nvim_set_current_buf without closing it
+    -- first, so wipe kicks in immediately and destroys it. When you back out
+    -- ("q"), Neogit tries to restore that buffer, finds it's already gone,
+    -- and falls back to `enew()` -- an empty buffer instead of where you were.
+    -- Force these buffers to survive being swapped out instead. This is
+    -- scoped to Neogit's own "Neogit*"-filetype chrome, so the deliberately
+    -- throwaway "view file at old commit" scratch buffers (real filetypes
+    -- like `lua`) are untouched and still wipe themselves as intended.
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "Neogit*",
+      group = vim.api.nvim_create_augroup("NeogitPreserveBuffersOnReplace", { clear = true }),
+      callback = function(args)
+        vim.bo[args.buf].bufhidden = "hide"
+      end,
+    })
+
+    -- The fix above stops the *common* case, but "Recent Commits" -> commit
+    -- -> file -> q -> q still lands you in a blank buffer. That q-mapping
+    -- (neogit/lib/jump.lua) force-deletes the file-preview scratch buffer
+    -- *before* reopening the commit view, so the commit view's "buffer to
+    -- restore to" gets captured from whatever anonymous placeholder buffer
+    -- Neovim fell back to mid-deletion, not the real previous buffer.
+    -- If that recorded target turns out to be one of those anonymous
+    -- placeholders (no name, no filetype), redirect to Neogit's status
+    -- buffer instead -- the correct destination for every case this
+    -- actually happens in.
+    local Buffer = require("neogit.lib.buffer")
+    local orig_buffer_close = Buffer.close
+    Buffer.close = function(self, force)
+      local function is_real_target(buf)
+        if not (buf and vim.api.nvim_buf_is_valid(buf)) then
+          return false
+        end
+        return vim.api.nvim_buf_get_name(buf) ~= "" or vim.bo[buf].filetype ~= ""
+      end
+
+      if self.kind == "replace" and not is_real_target(self.old_buf) then
+        local ok, status = pcall(require, "neogit.buffers.status")
+        if ok then
+          local inst = status.instance()
+          if inst and inst.buffer and inst.buffer.handle ~= self.handle and vim.api.nvim_buf_is_valid(inst.buffer.handle) then
+            self.old_buf = inst.buffer.handle
+          end
+        end
+      end
+
+      return orig_buffer_close(self, force)
+    end
+
     -- Neogit only saves the status buffer's fold/cursor state when
     -- StatusBuffer:close() runs. Drilling from "Recent Commits" into a
     -- commit and then a file swaps the window's buffer directly
@@ -60,6 +111,11 @@ return
             local inst = status.instance()
             if inst and inst.buffer and inst.buffer.ui then
               inst.fold_state = inst.buffer.ui:get_fold_state()
+              -- BufWinLeave fires while this buffer's window is still
+              -- current, so cursor_line()/save_view() (both window-0-based)
+              -- still read the right place.
+              inst.cursor_state = inst.buffer:cursor_line()
+              inst.view_state = inst.buffer:save_view()
             end
           end,
         })
