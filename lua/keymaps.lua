@@ -130,7 +130,7 @@ local function pr_link()
       return nil
     end
     return ("https://%s/projects/%s/repos/%s/pull-requests?create&sourceBranch=refs/heads/%s")
-      :format(host, project, repo, encoded_branch)
+        :format(host, project, repo, encoded_branch)
   end
 end
 
@@ -263,7 +263,6 @@ vim.keymap.set('n', '<leader>td', function()
   else
     vim.api.nvim_set_current_line('- [ ] ' .. line)
   end
-  vim.cmd('startinsert!')
 end, { desc = 'Add todo' })
 
 -- folding
