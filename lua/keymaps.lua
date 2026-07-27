@@ -141,12 +141,23 @@ end
 -- Safety net for quitting outright while the notes float is still open and
 -- was never otherwise left (BufWinLeave doesn't reliably fire for the last
 -- window closed on :qa).
+-- Also autosaves any dirty notes buffer on the way out -- covers `:qa`
+-- (bang skips the usual "unsaved changes" prompt, so without this an edit
+-- would just be silently discarded) as well as a notes buffer left dirty
+-- and hidden (bufhidden/'hidden' keeps it loaded but off-screen) from
+-- earlier in the session.
 vim.api.nvim_create_autocmd("VimLeavePre", {
   callback = function()
     for _, win in ipairs(vim.api.nvim_list_wins()) do
       local name = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
       if name:match("%-notes%.md$") then
         pcall(save_notes_cursor, name, vim.api.nvim_win_get_cursor(win))
+      end
+    end
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].modified
+        and vim.api.nvim_buf_get_name(buf):match("%-notes%.md$") then
+        pcall(vim.api.nvim_buf_call, buf, function() vim.cmd("write") end)
       end
     end
   end,
@@ -200,6 +211,12 @@ vim.keymap.set('n', '<leader>md', function()
     once = true,
     callback = function()
       pcall(save_notes_cursor, path, vim.api.nvim_win_get_cursor(0))
+      -- Still the current buffer/window at this point (BufWinLeave fires
+      -- just before leaving), so a plain :write covers however you left --
+      -- q, <Esc>, or switching windows some other way.
+      if vim.bo[buf].modified then
+        pcall(vim.cmd, "write")
+      end
     end,
   })
 
