@@ -29,6 +29,11 @@ return
     popup = { kind = "replace" },
     stash = { kind = "replace" },
     refs_view = { kind = "replace" },
+    mappings = {
+      -- Frees up <C-t> (default: TabOpen) so the global floating-terminal
+      -- toggle works inside Neogit's status buffer too.
+      status = { ["<c-t>"] = false },
+    },
   },
   config = function(_, opts)
     require("neogit").setup(opts)
