@@ -167,7 +167,7 @@ vim.keymap.set('n', '<leader>md', function()
 
   local width = math.floor(vim.o.columns * 0.9)
   local height = math.floor(vim.o.lines * 0.8)
-  vim.api.nvim_open_win(buf, true, {
+  local notes_win = vim.api.nvim_open_win(buf, true, {
     relative = "editor",
     width = width,
     height = height,
@@ -178,6 +178,14 @@ vim.keymap.set('n', '<leader>md', function()
     title = " Notes ",
     title_pos = "center",
   })
+  -- render-markdown pads checkbox/bullet icons with a highlight it expects
+  -- to match the surrounding background (default: 'Normal'), and it only
+  -- auto-switches that to NormalFloat for buftype=nofile scratch buffers --
+  -- notes.md is a real file buffer, so that built-in override doesn't
+  -- apply. Remap Normal -> NormalFloat for just this window instead of
+  -- changing render-markdown's global config, which would break the match
+  -- for any regular, non-floating markdown buffer.
+  vim.wo[notes_win].winhighlight = "Normal:NormalFloat"
 
   local saved = read_notes_cursor_cache()[path]
   if saved then
