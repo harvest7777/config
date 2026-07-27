@@ -90,6 +90,172 @@ vim.keymap.set('n', '<leader>nf', function()
   pcall(vim.api.nvim_win_set_cursor, 0, { line, col })
 end, { desc = 'Open real file from Neogit commit preview' })
 
+-- Per-worktree scratch notes, kept in ~/notes/ so they survive both editor
+-- restarts and /tmp getting cleared on reboot. One file per worktree root
+-- (not per branch) since a worktree checkout IS effectively the branch in
+-- this workflow.
+local function notes_path()
+  local root = vim.trim(vim.fn.system("git rev-parse --show-toplevel"))
+  local key = (vim.v.shell_error == 0 and root ~= "") and vim.fn.fnamemodify(root, ":t")
+      or vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
+  key = key:gsub("[^%w%-_.]", "-")
+  local notes_dir = vim.fs.joinpath(vim.uv.os_homedir(), "notes")
+  vim.fn.mkdir(notes_dir, "p")
+  return vim.fs.joinpath(notes_dir, key .. "-notes.md")
+end
+
+-- Track cursor position for notes files ourselves rather than relying on
+-- Neovim's native '\" mark restore -- that's still subject to 'shada's
+-- `'50` remembered-files cap and silently drops entries once you've edited
+-- enough other files, which would be an easy way to lose this quietly.
+local notes_cursor_cache_path = vim.fs.joinpath(vim.fn.stdpath("state"), "notes_cursor.json")
+
+local function read_notes_cursor_cache()
+  local f = io.open(notes_cursor_cache_path, "r")
+  if not f then
+    return {}
+  end
+  local content = f:read("*a")
+  f:close()
+  if content == "" then
+    return {}
+  end
+  local ok, data = pcall(vim.json.decode, content)
+  if not ok or type(data) ~= "table" then
+    return {}
+  end
+  return data
+end
+
+local function save_notes_cursor(path, cursor)
+  local data = read_notes_cursor_cache()
+  data[path] = { cursor[1], cursor[2] }
+  local f = io.open(notes_cursor_cache_path, "w")
+  if not f then
+    return
+  end
+  f:write(vim.json.encode(data))
+  f:close()
+end
+
+-- Safety net for quitting outright while the notes float is still open and
+-- was never otherwise left (BufWinLeave doesn't reliably fire for the last
+-- window closed on :qa).
+vim.api.nvim_create_autocmd("VimLeavePre", {
+  callback = function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local name = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
+      if name:match("%-notes%.md$") then
+        pcall(save_notes_cursor, name, vim.api.nvim_win_get_cursor(win))
+      end
+    end
+  end,
+})
+
+vim.keymap.set('n', '<leader>md', function()
+  local path = notes_path()
+  local is_new = vim.fn.filereadable(path) == 0
+
+  local buf = vim.fn.bufadd(path)
+  vim.fn.bufload(buf)
+
+  if is_new then
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "# Notes", "" })
+    vim.api.nvim_buf_call(buf, function() vim.cmd("write") end)
+    vim.notify("Created " .. path)
+  end
+
+  local width = math.floor(vim.o.columns * 0.9)
+  local height = math.floor(vim.o.lines * 0.8)
+  vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines - height) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = " Notes ",
+    title_pos = "center",
+  })
+
+  local saved = read_notes_cursor_cache()[path]
+  if saved then
+    local line = math.min(saved[1], vim.api.nvim_buf_line_count(buf))
+    local line_text = vim.api.nvim_buf_get_lines(buf, line - 1, line, false)[1] or ""
+    local col = math.min(saved[2], #line_text)
+    pcall(vim.api.nvim_win_set_cursor, 0, { line, col })
+  end
+
+  vim.api.nvim_create_autocmd("BufWinLeave", {
+    buffer = buf,
+    once = true,
+    callback = function()
+      pcall(save_notes_cursor, path, vim.api.nvim_win_get_cursor(0))
+    end,
+  })
+
+  vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true })
+  vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, silent = true })
+end, { desc = "Open this worktree's notes.md (floating)" })
+
+-- Floating terminal, toggled by the same key: hides (doesn't kill) the
+-- shell on repeat presses so it keeps running in the background, same as
+-- switching away from a regular terminal window and back. Only cd's into
+-- the current buffer's directory on first creation -- re-toggling later
+-- doesn't yank a running shell out from under whatever it's doing.
+local float_term = { buf = nil, win = nil }
+
+local function toggle_float_term()
+  if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
+    vim.api.nvim_win_hide(float_term.win)
+    float_term.win = nil
+    return
+  end
+
+  -- Must read this before opening/switching to the terminal window below --
+  -- once that's current, % refers to the terminal buffer, not this one.
+  local dir = vim.fn.expand('%:p:h')
+  if dir == '' or vim.fn.isdirectory(dir) == 0 then
+    dir = vim.fn.getcwd()
+  end
+
+  local width = math.floor(vim.o.columns * 0.9)
+  local height = math.floor(vim.o.lines * 0.8)
+  local is_new = not (float_term.buf and vim.api.nvim_buf_is_valid(float_term.buf))
+
+  if is_new then
+    float_term.buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[float_term.buf].bufhidden = 'hide'
+    -- Terminal mode passes every key straight to the shell (that's the
+    -- point), so the toggle needs its own buffer-local terminal-mode
+    -- binding to be reachable without dropping to normal mode first via
+    -- <C-\><C-n>. A single chord rather than a <leader> sequence, so it's
+    -- both fast and not something you'd plausibly type into the shell.
+    vim.keymap.set('t', '<C-t>', toggle_float_term, { buffer = float_term.buf, desc = 'Toggle floating terminal' })
+  end
+
+  float_term.win = vim.api.nvim_open_win(float_term.buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines - height) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = " Terminal ",
+    title_pos = "center",
+  })
+
+  if is_new then
+    vim.fn.jobstart(vim.o.shell, { term = true, cwd = dir })
+  end
+
+  vim.cmd('startinsert')
+end
+
+vim.keymap.set('n', '<C-t>', toggle_float_term, { desc = 'Toggle floating terminal' })
+
 -- Builds a PR/MR link for the current branch purely from local git state
 -- (remote URL + branch name) -- no HTTP requests, just string construction.
 -- Any host that isn't github.com/bitbucket.org/*gitlab* is assumed to be a
