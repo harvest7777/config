@@ -427,23 +427,56 @@ vim.keymap.set('n', '<leader>nr', function()
 end, { desc = 'Open explorer at git root' })
 
 -- todos
-vim.keymap.set('n', '<leader>x', function()
-  local line = vim.api.nvim_get_current_line()
+local function toggle_todo_line(line)
   if line:match('%[x%]') then
-    vim.api.nvim_set_current_line((line:gsub('%[x%]', '[ ]', 1)))
+    return (line:gsub('%[x%]', '[ ]', 1))
   elseif line:match('%[ %]') then
-    vim.api.nvim_set_current_line((line:gsub('%[ %]', '[x]', 1)))
+    return (line:gsub('%[ %]', '[x]', 1))
   end
+  return line
+end
+
+local function add_todo_line(line)
+  if line:match('^%s*%-%s*%[[ xX]%]') then
+    return line -- already a checkbox, leave it alone
+  end
+  if line:match('^%s*$') then
+    return '- [ ] '
+  end
+  return '- [ ] ' .. line
+end
+
+-- '< and '> only get updated to the just-made selection's bounds once you
+-- actually *leave* Visual mode -- and a Lua function bound straight to a
+-- visual-mode keymap runs while still IN Visual mode (mode() == 'v'/'V'),
+-- before that update happens, so line("'<")/line("'>") read stale/zeroed
+-- marks. The classic fix: map to a literal `:` command instead of a Lua
+-- function. Pressing `:` from Visual mode is itself what makes Vim leave
+-- Visual mode and set the marks -- <C-u> then clears the `'<,'>` range
+-- Vim auto-inserts on the command line, since we read the marks ourselves.
+local function apply_to_visual_selection(transform)
+  local start_line = vim.fn.line("'<")
+  local end_line = vim.fn.line("'>")
+  for lnum = start_line, end_line do
+    vim.fn.setline(lnum, transform(vim.fn.getline(lnum)))
+  end
+end
+
+vim.keymap.set('n', '<leader>x', function()
+  vim.api.nvim_set_current_line(toggle_todo_line(vim.api.nvim_get_current_line()))
 end, { desc = 'Toggle todo' })
 
+_G.__todo_toggle_range = function() apply_to_visual_selection(toggle_todo_line) end
+vim.keymap.set('v', '<leader>x', ':<C-u>lua __todo_toggle_range()<CR>',
+  { silent = true, desc = 'Toggle todo (selection)' })
+
 vim.keymap.set('n', '<leader>td', function()
-  local line = vim.api.nvim_get_current_line()
-  if line:match('^%s*$') then
-    vim.api.nvim_set_current_line('- [ ] ')
-  else
-    vim.api.nvim_set_current_line('- [ ] ' .. line)
-  end
+  vim.api.nvim_set_current_line(add_todo_line(vim.api.nvim_get_current_line()))
 end, { desc = 'Add todo' })
+
+_G.__todo_add_range = function() apply_to_visual_selection(add_todo_line) end
+vim.keymap.set('v', '<leader>td', ':<C-u>lua __todo_add_range()<CR>',
+  { silent = true, desc = 'Add todo (selection)' })
 
 -- folding
 vim.o.foldmethod = 'expr'
