@@ -74,6 +74,22 @@ vim.keymap.set('n', '<leader>P', function()
   vim.fn.setreg("+", rel)
 end, { desc = 'Copy relative path' })
 
+vim.keymap.set('n', '<leader>nf', function()
+  local real = real_path_for_current_buffer()
+  if not real then
+    vim.notify('Not in a Neogit commit-preview buffer', vim.log.levels.WARN)
+    return
+  end
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  vim.cmd('edit ' .. vim.fn.fnameescape(real))
+  -- The historical version can have a different line count/content than
+  -- HEAD, so clamp to whatever's actually in the real file.
+  local line = math.min(cursor[1], vim.api.nvim_buf_line_count(0))
+  local line_text = vim.api.nvim_buf_get_lines(0, line - 1, line, false)[1] or ""
+  local col = math.min(cursor[2], #line_text)
+  pcall(vim.api.nvim_win_set_cursor, 0, { line, col })
+end, { desc = 'Open real file from Neogit commit preview' })
+
 -- Builds a PR/MR link for the current branch purely from local git state
 -- (remote URL + branch name) -- no HTTP requests, just string construction.
 -- Any host that isn't github.com/bitbucket.org/*gitlab* is assumed to be a
