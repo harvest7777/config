@@ -19,23 +19,26 @@ vim.keymap.set('n', '<leader>ip', function()
   local opts = { prompt = 'Enter pr link', scope = 'buffer' }
 
   vim.ui.input(opts, function(input)
-    local state_path = vim.fs.joinpath(vim.fn.stdpath("state"), "pr_links.json")
+    local valid = input ~= '' and input ~= nil
+    if valid then
+      local state_path = vim.fs.joinpath(vim.fn.stdpath("state"), "pr_links.json")
 
-    local data = read_cache(state_path)
+      local data = read_cache(state_path)
 
-    local cwd = vim.fn.getcwd()
-    local branch_name = vim.fn.system("git rev-parse --abbrev-ref HEAD")
-    local cwd_branch_name_key = cwd .. "-" .. branch_name
+      local cwd = vim.fn.getcwd()
+      local branch_name = vim.fn.system("git rev-parse --abbrev-ref HEAD")
+      local cwd_branch_name_key = cwd .. "-" .. branch_name
 
-    data[cwd_branch_name_key] = input
+      data[cwd_branch_name_key] = input
 
-    local f = io.open(state_path, "w")
-    if not f then
-      return
+      local f = io.open(state_path, "w")
+      if not f then
+        return
+      end
+      f:write(vim.json.encode(data))
+      f:close()
+      vim.notify('Saved ' .. input)
     end
-    f:write(vim.json.encode(data))
-    f:close()
-    vim.notify('Saved ' .. input)
   end)
 end, { desc = 'Save PR to branch or worktree' })
 
