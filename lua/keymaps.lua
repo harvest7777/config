@@ -1,47 +1,51 @@
--- lazygit
--- local function goto_editor_win()
---   for _, win in ipairs(vim.api.nvim_list_wins()) do
---     local cfg = vim.api.nvim_win_get_config(win)
---     if cfg.relative == '' then
---       vim.api.nvim_set_current_win(win)
---       return
---     end
---   end
--- end
--- _G.goto_editor_win = goto_editor_win
---
--- local function toggle_lazygit()
---   if _G.lazygit_buf and vim.api.nvim_buf_is_valid(_G.lazygit_buf) then
---     vim.api.nvim_buf_delete(_G.lazygit_buf, { force = true })
---     _G.lazygit_buf = nil
---     return
---   end
---   goto_editor_win()
---   local buf = vim.api.nvim_create_buf(false, true)
---   local width = math.floor(vim.o.columns * 0.95)
---   local height = math.floor(vim.o.lines * 0.95)
---   vim.api.nvim_open_win(buf, true, {
---     relative = "editor",
---     width = width,
---     height = height,
---     col = math.floor((vim.o.columns - width) / 2),
---     row = math.floor((vim.o.lines - height) / 2),
---     style = "minimal",
---     border = "rounded",
---   })
---   vim.fn.jobstart("lazygit", {
---     term = true,
---     on_exit = function()
---       if vim.api.nvim_buf_is_valid(buf) then
---         vim.api.nvim_buf_delete(buf, { force = true })
---       end
---       _G.lazygit_buf = nil
---     end,
---   })
---   _G.lazygit_buf = buf
---   vim.cmd("startinsert")
--- end
--- vim.keymap.set("n", "<leader>gg", toggle_lazygit)
+local function read_cache(cache_path)
+  local f = io.open(cache_path, "r")
+  if not f then
+    return {}
+  end
+  local content = f:read("*a")
+  f:close()
+  if content == "" then
+    return {}
+  end
+  local ok, data = pcall(vim.json.decode, content)
+  if not ok or type(data) ~= "table" then
+    return {}
+  end
+  return data
+end
+
+vim.keymap.set('n', '<leader>ip', function()
+  local cwd = vim.fn.getcwd()
+  -- a combination of cwd/branch is guaranteed to be unique
+  local branch_name = vim.fn.system("git rev-parse --abbrev-ref HEAD")
+  local cwd_branch_name_key = cwd .. "-" .. branch_name
+  -- need to save that bitch somewhere
+
+  local opts = { prompt = 'Enter pr link', scope = 'buffer' }
+
+  vim.ui.input(opts, function(input)
+    local state_path = vim.fs.joinpath(vim.fn.stdpath("state"), "pr_links.json")
+    local data = read_cache(state_path)
+    data[cwd_branch_name_key] = input
+  end)
+end, { desc = 'Save PR to branch or worktree' })
+
+vim.keymap.set('n', '<leader>gp', function()
+  local cwd = vim.fn.getcwd()
+  -- a combination of cwd/branch is guaranteed to be unique
+  local branch_name = vim.fn.system("git rev-parse --abbrev-ref HEAD")
+  local cwd_branch_name_key = cwd .. "-" .. branch_name
+  -- need to save that bitch somewhere
+
+  local opts = { prompt = 'Enter pr link', scope = 'buffer' }
+
+  vim.ui.input(opts, function(input)
+    local state_path = vim.fs.joinpath(vim.fn.stdpath("state"), "pr_links.json")
+    local data = read_cache(state_path)
+    data[cwd_branch_name_key] = input
+  end)
+end, { desc = 'Save PR to branch or worktree' })
 
 -- misc
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = 'Write file' })
@@ -156,7 +160,7 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
     end
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
       if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].modified
-        and vim.api.nvim_buf_get_name(buf):match("%-notes%.md$") then
+          and vim.api.nvim_buf_get_name(buf):match("%-notes%.md$") then
         pcall(vim.api.nvim_buf_call, buf, function() vim.cmd("write") end)
       end
     end
