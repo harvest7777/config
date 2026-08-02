@@ -31,12 +31,9 @@ return
     stash = { kind = "replace" },
     refs_view = { kind = "replace" },
     sections = {
-      -- Status buffer swaps "Recent commits" out for "Unmerged into
-      -- origin/main" whenever there are unpushed commits (it's the same
-      -- commits, just relabeled/unfolded) -- hide that section so
-      -- "Recent commits" stays put instead, and unfold it to match
-      -- (it defaults to folded, unlike the section it's replacing).
-      unmerged_upstream = { hidden = true },
+      -- "Recent commits" defaults to folded, unlike "Unmerged into" which
+      -- it's spliced alongside (see the status_ui.Status patch below) --
+      -- unfold it so it doesn't look empty at a glance.
       recent = { folded = false },
     },
     mappings = {
@@ -218,6 +215,53 @@ return
         persist_fold_state(inst.cwd, fold_state)
       end,
     })
+
+    -- Status buffer hides "Recent Commits" whenever "Unmerged into
+    -- origin/main" is showing (buffers/status/ui.lua:
+    -- `not show_upstream_unmerged and show_recent`) since they'd otherwise
+    -- show mostly the same commits -- there's no config flag to show both.
+    -- Render the tree twice: once normally (to get "Unmerged into" if
+    -- present), once with that section force-hidden (to coax "Recent
+    -- Commits" into existing), then splice the latter's "recent" section
+    -- into the former's tree right after "Unmerged into".
+    local status_ui = require("neogit.buffers.status.ui")
+    local orig_status_render = status_ui.Status
+    status_ui.Status = function(state, cfg)
+      local result = orig_status_render(state, cfg)
+
+      local show_recent = #state.recent.items > 0 and not cfg.sections.recent.hidden
+      local show_unmerged = #state.upstream.unmerged.items > 0 and not cfg.sections.unmerged_upstream.hidden
+
+      if show_recent and show_unmerged then
+        local cfg2 = vim.tbl_extend("force", {}, cfg)
+        cfg2.sections = vim.tbl_extend("force", {}, cfg.sections)
+        cfg2.sections.unmerged_upstream =
+          vim.tbl_extend("force", {}, cfg.sections.unmerged_upstream, { hidden = true })
+        local recent_only = orig_status_render(state, cfg2)
+
+        local recent_component
+        for _, child in ipairs(recent_only[1].children) do
+          if child.options and child.options.id == "recent" then
+            recent_component = child
+            break
+          end
+        end
+
+        if recent_component then
+          local children = result[1].children
+          local insert_at = #children + 1
+          for i, child in ipairs(children) do
+            if child.options and child.options.id == "upstream_unmerged" then
+              insert_at = i + 1
+              break
+            end
+          end
+          table.insert(children, insert_at, recent_component)
+        end
+      end
+
+      return result
+    end
 
     -- Context (unchanged) lines in expanded diffs default to a shaded
     -- background; flatten them to match Normal so only +/- lines stand out.
