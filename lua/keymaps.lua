@@ -180,11 +180,19 @@ vim.keymap.set('n', '<leader>md', function()
   local is_new = vim.fn.filereadable(path) == 0
 
   local buf = vim.fn.bufadd(path)
-  vim.fn.bufload(buf)
+  local loaded_ok, load_err = pcall(vim.fn.bufload, buf)
+  if not loaded_ok then
+    vim.notify("Couldn't open notes: " .. tostring(load_err), vim.log.levels.ERROR)
+    return
+  end
 
   if is_new then
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "# Notes", "" })
-    vim.api.nvim_buf_call(buf, function() vim.cmd("write") end)
+    local write_ok, write_err = pcall(vim.api.nvim_buf_call, buf, function() vim.cmd("write") end)
+    if not write_ok then
+      vim.notify("Couldn't save new notes file: " .. tostring(write_err), vim.log.levels.ERROR)
+      return
+    end
     vim.notify("Created " .. path)
   end
 

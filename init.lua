@@ -23,18 +23,26 @@ require("lsp")
 vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   once = true,
   callback = function(ev)
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if buf ~= ev.buf
-          and vim.fn.buflisted(buf) == 1
-          and vim.api.nvim_buf_get_name(buf) == ''
-          and not vim.bo[buf].modified
-      then
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-        if #lines == 0 or (#lines == 1 and lines[1] == '') then
-          pcall(vim.api.nvim_buf_delete, buf, {})
+    -- Deferred: this autocmd can fire synchronously in the middle of
+    -- another buffer's load (e.g. bufload() on a brand-new file), and
+    -- deleting a buffer that's displayed in the sole remaining window at
+    -- that point trips E444 ("Cannot close last window") back up through
+    -- the in-progress load, aborting whatever triggered it. Scheduling
+    -- lets the current load finish first.
+    vim.schedule(function()
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if buf ~= ev.buf
+            and vim.fn.buflisted(buf) == 1
+            and vim.api.nvim_buf_get_name(buf) == ''
+            and not vim.bo[buf].modified
+        then
+          local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+          if #lines == 0 or (#lines == 1 and lines[1] == '') then
+            pcall(vim.api.nvim_buf_delete, buf, {})
+          end
         end
       end
-    end
+    end)
   end,
 })
 
