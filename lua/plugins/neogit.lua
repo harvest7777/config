@@ -96,6 +96,17 @@ return
       pattern = "Neogit*",
       group = vim.api.nvim_create_augroup("NeogitPreserveBuffersOnReplace", { clear = true }),
       callback = function(args)
+        -- NeogitCommitSelectView is a one-shot modal (squash/fixup/rebase
+        -- commit picker), never something you back out to and expect
+        -- restored. It also opens a separate floating header window that
+        -- Neogit only closes via an on_detach callback fired by the
+        -- default bufhidden=wipe when Buffer:close() swaps the window's
+        -- buffer back. Forcing hide here stops that swap from wiping the
+        -- buffer, on_detach never fires, and the header window is
+        -- orphaned -- left floating indefinitely after you pick a commit.
+        if args.match == "NeogitCommitSelectView" then
+          return
+        end
         vim.bo[args.buf].bufhidden = "hide"
       end,
     })
