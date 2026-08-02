@@ -30,6 +30,15 @@ return
     popup = { kind = "replace" },
     stash = { kind = "replace" },
     refs_view = { kind = "replace" },
+    sections = {
+      -- Status buffer swaps "Recent commits" out for "Unmerged into
+      -- origin/main" whenever there are unpushed commits (it's the same
+      -- commits, just relabeled/unfolded) -- hide that section so
+      -- "Recent commits" stays put instead, and unfold it to match
+      -- (it defaults to folded, unlike the section it's replacing).
+      unmerged_upstream = { hidden = true },
+      recent = { folded = false },
+    },
     mappings = {
       -- Frees up <C-t> (default: TabOpen) so the global floating-terminal
       -- toggle works inside Neogit's status buffer too.
