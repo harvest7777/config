@@ -1,3 +1,4 @@
+--test
 return
 {
   "NeogitOrg/neogit",
