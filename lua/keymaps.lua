@@ -217,6 +217,8 @@ vim.keymap.set('n', '<leader>md', function()
   -- changing render-markdown's global config, which would break the match
   -- for any regular, non-floating markdown buffer.
   vim.wo[notes_win].winhighlight = "Normal:NormalFloat"
+  vim.wo[notes_win].wrap = true
+  vim.wo[notes_win].linebreak = true
 
   local saved = read_notes_cursor_cache()[path]
   if saved then
