@@ -48,7 +48,5 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
 
 vim.lsp.enable('lua_ls')
 vim.lsp.enable('pyright')
-vim.lsp.enable('yamlls')
-vim.lsp.enable('jsonnet_ls')
 vim.lsp.enable('bashls')
 vim.lsp.enable('clangd')
