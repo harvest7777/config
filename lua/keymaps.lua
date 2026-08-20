@@ -346,6 +346,9 @@ vim.keymap.set('n', 'k', 'kzz', { desc = 'Up and center' })
 vim.keymap.set('n', 'n', 'nzz', { desc = 'Next match and center' })
 vim.keymap.set('n', 'N', 'Nzz', { desc = 'Prev match and center' })
 
+vim.keymap.set('n', '<leader>gx', '<cmd>tabclose<cr>', { desc = 'Close tab' })
+vim.keymap.set('n', '<leader>gn', '<cmd>tabnew<cr>', { desc = 'New tab' })
+
 -- noice
 vim.keymap.set('n', '<leader>nd', '<cmd>Noice dismiss<cr>', { desc = 'Dismiss Noice toasts' })
 vim.keymap.set('n', '<leader>na', '<cmd>Noice all<cr>', { desc = 'View all messages' })
@@ -377,15 +380,6 @@ vim.keymap.set('n', '<leader>fn', function()
     cwd = dir,
   })
 end, { desc = 'Find files in cwd' })
-
--- grep
-vim.keymap.set('n', '<leader>gn', function()
-  local root = vim.fn.getcwd()
-  require('telescope.builtin').live_grep({
-    prompt_title = 'Live grep (from ' .. vim.fn.fnamemodify(root, ':~') .. ')',
-    search_dirs = { root },
-  })
-end, { desc = 'Live grep in cwd' })
 
 vim.keymap.set('n', '<leader>dn', function()
   local root = vim.fn.getcwd()
