@@ -1,3 +1,6 @@
+vim.opt.showtabline = 2      -- always show tabline (bufferline renders it)
+vim.opt.termguicolors = true -- bufferline needs true color
+
 -- line numbers
 vim.opt.number = true         -- show line numbers
 vim.opt.relativenumber = true -- relative numbers (great for jumping)
