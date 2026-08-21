@@ -22,8 +22,22 @@ return {
       callback = function()
         if vim.fn.argc() == 0 then
           require('persistence').load()
-          -- clear flash.nvim label patterns saved in session to avoid E486
-          vim.schedule(function() vim.cmd('nohlsearch') end)
+          vim.schedule(function()
+            -- clear flash.nvim label patterns saved in session to avoid E486
+            vim.cmd('nohlsearch')
+
+            -- yazi.nvim deliberately skips its directory-buffer hijack while a
+            -- session is loading (:h SessionLoad-variable), so a directory that
+            -- was open when the session was saved comes back as a stray listed
+            -- buffer -- which then gets re-saved on exit, making it permanent.
+            -- Wipe directory buffers once the restore has settled.
+            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+              local name = vim.api.nvim_buf_get_name(buf)
+              if name ~= '' and vim.fn.isdirectory(name) == 1 then
+                pcall(vim.api.nvim_buf_delete, buf, { force = true })
+              end
+            end
+          end)
         end
       end,
     })
