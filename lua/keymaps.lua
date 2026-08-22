@@ -253,6 +253,26 @@ end, { desc = "Open this worktree's notes.md (floating)" })
 -- doesn't yank a running shell out from under whatever it's doing.
 local float_term = { buf = nil, win = nil }
 
+-- Geometry is derived from the editor's current size, so it has to be
+-- recomputed rather than captured once: resizing the tmux pane nvim lives
+-- in changes vim.o.columns/lines, but a float keeps whatever size and
+-- position it was opened with until something tells it otherwise.
+local function float_term_config()
+  local width = math.floor(vim.o.columns * 0.9)
+  local height = math.floor(vim.o.lines * 0.8)
+  return {
+    relative = "editor",
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines - height) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = " Terminal ",
+    title_pos = "center",
+  }
+end
+
 local function toggle_float_term()
   if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
     vim.api.nvim_win_hide(float_term.win)
@@ -267,8 +287,6 @@ local function toggle_float_term()
     dir = vim.fn.getcwd()
   end
 
-  local width = math.floor(vim.o.columns * 0.9)
-  local height = math.floor(vim.o.lines * 0.8)
   local is_new = not (float_term.buf and vim.api.nvim_buf_is_valid(float_term.buf))
 
   if is_new then
@@ -282,17 +300,7 @@ local function toggle_float_term()
     vim.keymap.set('t', '<C-t>', toggle_float_term, { buffer = float_term.buf, desc = 'Toggle floating terminal' })
   end
 
-  float_term.win = vim.api.nvim_open_win(float_term.buf, true, {
-    relative = "editor",
-    width = width,
-    height = height,
-    col = math.floor((vim.o.columns - width) / 2),
-    row = math.floor((vim.o.lines - height) / 2),
-    style = "minimal",
-    border = "rounded",
-    title = " Terminal ",
-    title_pos = "center",
-  })
+  float_term.win = vim.api.nvim_open_win(float_term.buf, true, float_term_config())
 
   if is_new then
     vim.fn.jobstart(vim.o.shell, { term = true, cwd = dir })
@@ -302,6 +310,19 @@ local function toggle_float_term()
 end
 
 vim.keymap.set('n', '<C-t>', toggle_float_term, { desc = 'Toggle floating terminal' })
+
+-- Without this the float keeps its old geometry after the surrounding tmux
+-- pane is resized, which leaves the shell's pty at a stale size (and the
+-- window itself hanging off the edge when the pane shrank).
+vim.api.nvim_create_autocmd('VimResized', {
+  group = vim.api.nvim_create_augroup('FloatTermResize', { clear = true }),
+  callback = function()
+    if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
+      vim.api.nvim_win_set_config(float_term.win, float_term_config())
+    end
+  end,
+  desc = 'Keep the floating terminal sized to the editor',
+})
 
 -- toggles
 vim.keymap.set('n', '<leader>lb', function()
