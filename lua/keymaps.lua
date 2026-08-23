@@ -414,11 +414,22 @@ end, { desc = 'Find directory in cwd' })
 
 -- yazi
 vim.keymap.set('n', '<leader>no', '<cmd>Yazi<cr>', { desc = 'Reveal current file' })
-vim.keymap.set('n', '<leader>nr', function()
+local function explorer_root()
   local root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
-  local dir = (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
-  require('yazi').yazi(nil, dir)
+  return (vim.v.shell_error == 0 and root) or vim.fn.getcwd()
+end
+
+vim.keymap.set('n', '<leader>nr', function()
+  require('yazi').yazi(nil, explorer_root())
 end, { desc = 'Open explorer at git root' })
+
+vim.keymap.set('n', '<leader>ne', function()
+  local dir = vim.g.yazi_last_directory
+  if not dir or vim.fn.isdirectory(dir) == 0 then
+    dir = explorer_root()
+  end
+  require('yazi').yazi(nil, dir)
+end, { desc = 'Open explorer where it was last closed' })
 
 -- todos
 local function toggle_todo_line(line)
