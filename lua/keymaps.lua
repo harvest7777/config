@@ -56,6 +56,11 @@ vim.keymap.set('n', '<leader>gp', function()
 end, { desc = 'Save PR to branch or worktree' })
 
 -- misc
+vim.keymap.set('n', '<leader>bx', function()
+  local bufnr = vim.api.nvim_get_current_buf()
+  vim.cmd('bp')
+  vim.api.nvim_buf_delete(bufnr, {})
+end, { desc = "Delete current buffer safely" })
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = 'Write file' })
 vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = 'Write all' })
 vim.keymap.set('n', '<leader>qq', '<cmd>qa!<cr>', { desc = 'Quit all' })
