@@ -251,13 +251,14 @@ end, { desc = "Open this worktree's notes.md (floating)" })
 -- switching away from a regular terminal window and back. Only cd's into
 -- the current buffer's directory on first creation -- re-toggling later
 -- doesn't yank a running shell out from under whatever it's doing.
-local float_term = { buf = nil, win = nil }
+local float_term = { buf = nil, win = nil, scrollback = false }
+local toggle_float_term
 
 -- Geometry is derived from the editor's current size, so it has to be
 -- recomputed rather than captured once: resizing the tmux pane nvim lives
 -- in changes vim.o.columns/lines, but a float keeps whatever size and
 -- position it was opened with until something tells it otherwise.
-local function float_term_config()
+local function float_term_config(scrollback)
   local width = math.floor(vim.o.columns * 0.9)
   local height = math.floor(vim.o.lines * 0.8)
   return {
@@ -268,12 +269,95 @@ local function float_term_config()
     row = math.floor((vim.o.lines - height) / 2),
     style = "minimal",
     border = "rounded",
-    title = " Terminal ",
+    title = scrollback and " Terminal - scrollback (q to resume) " or " Terminal ",
     title_pos = "center",
   }
 end
 
-local function toggle_float_term()
+-- Terminal mode always renders the live screen, so viewing scrollback
+-- necessarily means dropping to normal mode -- which is what the mouse
+-- wheel does on its own (see :h terminal-mouse: with no mouse reporting
+-- from the shell, the wheel event steals terminal focus). Rather than
+-- fight that, treat normal mode in this buffer as tmux's copy-mode: the
+-- title says so, and getting back to the prompt is automatic instead of
+-- a manual `i`.
+local function term_resume()
+  if not (float_term.buf and vim.api.nvim_buf_is_valid(float_term.buf)) then
+    return
+  end
+  -- The buffer is a plain scratch one until jobstart() attaches the shell,
+  -- and goes inert again once the shell exits; startinsert would mean
+  -- ordinary insert mode in both cases.
+  if vim.bo[float_term.buf].buftype ~= 'terminal' then
+    return
+  end
+  if float_term.win and vim.api.nvim_win_is_valid(float_term.win) and vim.api.nvim_get_current_win() == float_term.win then
+    -- Scheduled because startinsert doesn't stick when it's issued from
+    -- inside a mapping or an autocmd -- the pending mode change is
+    -- discarded when the event that triggered it finishes.
+    vim.schedule(function()
+      -- Entering terminal mode snaps back to the live screen on its own.
+      vim.cmd('startinsert')
+    end)
+  end
+end
+
+local function float_term_setup(buf)
+  -- Terminal mode passes every key straight to the shell (that's the
+  -- point), so the toggle needs its own buffer-local terminal-mode
+  -- binding to be reachable without dropping to normal mode first via
+  -- <C-\><C-n>. A single chord rather than a <leader> sequence, so it's
+  -- both fast and not something you'd plausibly type into the shell.
+  vim.keymap.set('t', '<C-t>', toggle_float_term, { buffer = buf, desc = 'Toggle floating terminal' })
+
+  -- tmux exits copy-mode on q; <Esc> is the same reflex here.
+  vim.keymap.set('n', 'q', term_resume, { buffer = buf, desc = 'Resume typing in the terminal' })
+  vim.keymap.set('n', '<Esc>', term_resume, { buffer = buf, desc = 'Resume typing in the terminal' })
+
+  local group = vim.api.nvim_create_augroup('FloatTermScrollback', { clear = true })
+
+  -- Scrolling back down to the bottom means you're done reading, so hand
+  -- the keyboard back to the shell. This is also what makes an accidental
+  -- wheel nudge at the prompt a no-op: focus is lost and restored before
+  -- you can type into the wrong mode.
+  vim.api.nvim_create_autocmd('WinScrolled', {
+    group = group,
+    buffer = buf,
+    callback = function()
+      -- Normal mode in a terminal buffer reports as 'nt', not 'n'.
+      if vim.api.nvim_get_mode().mode:sub(1, 1) ~= 'n' then
+        return
+      end
+      if vim.fn.line('w$') >= vim.api.nvim_buf_line_count(buf) then
+        term_resume()
+      end
+    end,
+    desc = 'Leave terminal scrollback once the live screen is back in view',
+  })
+
+  -- Re-focusing the float should type, not navigate.
+  vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
+    group = group,
+    buffer = buf,
+    callback = term_resume,
+    desc = 'Start typing when the floating terminal regains focus',
+  })
+
+  -- Keep the title honest about which of the two modes you're in.
+  vim.api.nvim_create_autocmd({ 'TermEnter', 'TermLeave' }, {
+    group = group,
+    buffer = buf,
+    callback = function(ev)
+      float_term.scrollback = ev.event == 'TermLeave'
+      if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
+        vim.api.nvim_win_set_config(float_term.win, float_term_config(float_term.scrollback))
+      end
+    end,
+    desc = 'Label the floating terminal when it is showing scrollback',
+  })
+end
+
+function toggle_float_term()
   if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
     vim.api.nvim_win_hide(float_term.win)
     float_term.win = nil
@@ -292,15 +376,16 @@ local function toggle_float_term()
   if is_new then
     float_term.buf = vim.api.nvim_create_buf(false, true)
     vim.bo[float_term.buf].bufhidden = 'hide'
-    -- Terminal mode passes every key straight to the shell (that's the
-    -- point), so the toggle needs its own buffer-local terminal-mode
-    -- binding to be reachable without dropping to normal mode first via
-    -- <C-\><C-n>. A single chord rather than a <leader> sequence, so it's
-    -- both fast and not something you'd plausibly type into the shell.
-    vim.keymap.set('t', '<C-t>', toggle_float_term, { buffer = float_term.buf, desc = 'Toggle floating terminal' })
+    float_term_setup(float_term.buf)
   end
 
   float_term.win = vim.api.nvim_open_win(float_term.buf, true, float_term_config())
+
+  -- A shell has no use for the global scrolloff, and at this config's
+  -- value it would shove the live prompt into the middle of the float the
+  -- moment the wheel drops you into normal mode.
+  vim.wo[float_term.win].scrolloff = 0
+  vim.wo[float_term.win].sidescrolloff = 0
 
   if is_new then
     vim.fn.jobstart(vim.o.shell, { term = true, cwd = dir })
@@ -318,7 +403,7 @@ vim.api.nvim_create_autocmd('VimResized', {
   group = vim.api.nvim_create_augroup('FloatTermResize', { clear = true }),
   callback = function()
     if float_term.win and vim.api.nvim_win_is_valid(float_term.win) then
-      vim.api.nvim_win_set_config(float_term.win, float_term_config())
+      vim.api.nvim_win_set_config(float_term.win, float_term_config(float_term.scrollback))
     end
   end,
   desc = 'Keep the floating terminal sized to the editor',
