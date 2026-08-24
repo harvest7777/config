@@ -9,6 +9,48 @@ local function float_term_dir()
   return dir
 end
 
+-- A nvim terminal buffer is a child of nvim, so its shell dies with the
+-- editor no matter what the session plugin saves. The way to outlive a
+-- quit is to not own the process: run the shell in a tmux session on a
+-- private server (-L floaterm) and have the float attach to it. Quitting
+-- nvim detaches; the next <C-t> reattaches to the same shell, jobs and
+-- scrollback intact.
+local TMUX_SOCKET = 'floaterm'
+
+-- One session per project rather than per directory, so opening a file
+-- two levels down doesn't strand you with a second shell. The hash
+-- disambiguates same-named projects in different checkouts; tmux session
+-- names can't contain dots or colons, hence the scrub.
+local function tmux_session()
+  local dir = float_term_dir()
+  local root = vim.fs.root(dir, '.git') or dir
+  local name = vim.fn.fnamemodify(root, ':t'):gsub('[^%w_-]', '-')
+  return ('nvim-%s-%s'):format(name, vim.fn.sha256(root):sub(1, 6))
+end
+
+local function term_cmd()
+  local dir = float_term_dir()
+
+  if vim.fn.executable('tmux') == 0 then
+    return 'cd ' .. vim.fn.shellescape(dir)
+  end
+
+  -- env -u TMUX because tmux refuses to attach from inside another tmux
+  -- client, even on a different socket, unless $TMUX is cleared.
+  -- new-session -A attaches if it exists and creates it otherwise, and
+  -- -c only applies on creation -- so a brand new shell starts in the
+  -- current buffer's directory, and an existing one is left exactly
+  -- where you parked it.
+  return table.concat({
+    'env -u TMUX tmux',
+    '-L ' .. TMUX_SOCKET,
+    '-f ' .. vim.fn.shellescape(vim.fn.stdpath('config') .. '/floaterm-tmux.conf'),
+    'new-session -A',
+    '-s ' .. vim.fn.shellescape(tmux_session()),
+    '-c ' .. vim.fn.shellescape(dir),
+  }, ' ')
+end
+
 -- Same tmux copy-mode treatment the old float had: the mouse wheel drops
 -- a terminal out of terminal mode (:h terminal-mouse), so make getting
 -- back to the prompt automatic rather than a manual `i`.
@@ -84,10 +126,11 @@ return {
     border = true,
     size = { h = 80, w = 90 },
     -- floaterm has no cwd option; it just jobstart()s vim.o.shell. The
-    -- cmd string is run as `shell -c "<cmd>; shell"`, so cd'ing there is
-    -- what gets a shell that opens in the current buffer's directory.
+    -- cmd string is run as `shell -c "<cmd>; shell"`, which also means a
+    -- detached or missing tmux drops you into a plain shell rather than
+    -- an empty buffer.
     terminals = function()
-      return { { name = 'Terminal', cmd = 'cd ' .. vim.fn.shellescape(float_term_dir()) } }
+      return { { name = 'Terminal', cmd = term_cmd } }
     end,
     mappings = { term = setup_term_buf },
   },
