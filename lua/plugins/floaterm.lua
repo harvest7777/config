@@ -1,6 +1,8 @@
 -- Floating terminal. Replaces the hand-rolled float that used to live in
 -- keymaps.lua: floaterm owns the window, the multi-terminal sidebar and
 -- the toggle, so all that's left here is the behaviour it doesn't cover.
+local api = vim.api
+
 local function float_term_dir()
   local dir = vim.fn.expand('%:p:h')
   if dir == '' or vim.fn.isdirectory(dir) == 0 then
@@ -13,7 +15,7 @@ end
 -- a terminal out of terminal mode (:h terminal-mouse), so make getting
 -- back to the prompt automatic rather than a manual `i`.
 local function term_resume()
-  if vim.bo[vim.api.nvim_get_current_buf()].buftype ~= 'terminal' then
+  if vim.bo[api.nvim_get_current_buf()].buftype ~= 'terminal' then
     return
   end
   -- Scheduled because startinsert doesn't stick when it's issued from
@@ -35,20 +37,20 @@ local function setup_term_buf(buf)
   vim.keymap.set('n', 'q', term_resume, { buffer = buf, desc = 'Resume typing in the terminal' })
   vim.keymap.set('n', '<Esc>', term_resume, { buffer = buf, desc = 'Resume typing in the terminal' })
 
-  local group = vim.api.nvim_create_augroup('FloatermScrollback', { clear = true })
+  local group = api.nvim_create_augroup('FloatermScrollback', { clear = true })
 
   -- Scrolling back down to the live screen means you're done reading, so
   -- hand the keyboard back to the shell. Also makes a stray wheel nudge
   -- at the prompt a no-op.
-  vim.api.nvim_create_autocmd('WinScrolled', {
+  api.nvim_create_autocmd('WinScrolled', {
     group = group,
     buffer = buf,
     callback = function()
       -- Normal mode in a terminal buffer reports as 'nt', not 'n'.
-      if vim.api.nvim_get_mode().mode:sub(1, 1) ~= 'n' then
+      if api.nvim_get_mode().mode:sub(1, 1) ~= 'n' then
         return
       end
-      if vim.fn.line('w$') >= vim.api.nvim_buf_line_count(buf) then
+      if vim.fn.line('w$') >= api.nvim_buf_line_count(buf) then
         term_resume()
       end
     end,
@@ -59,7 +61,7 @@ local function setup_term_buf(buf)
   -- value it would shove the live prompt into the middle of the float
   -- the moment the wheel drops you into normal mode. Window-local, so it
   -- has to be reapplied every time the float is reopened.
-  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
+  api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
     group = group,
     buffer = buf,
     callback = function()
@@ -71,6 +73,152 @@ local function setup_term_buf(buf)
 
   vim.wo.scrolloff = 0
   vim.wo.sidescrolloff = 0
+end
+
+-- floaterm builds its UI out of three independently bordered floats laid
+-- next to each other, which leaves a one-column seam between the sidebar
+-- and the terminal where the buffer underneath shows through, and gives
+-- the group no outline of its own. The layout below reassembles the same
+-- three windows as a single framed unit: a backdrop float draws the outer
+-- border and fills every cell behind the group, and the bar and terminal
+-- carry only the rules that divide the interior.
+local SIDEBAR_W = 20 -- floaterm hardcodes this
+local OUTER_BORDER = 'rounded'
+local BAR_BORDER = { '', '', '', '', '', '', '', '│' }
+local TERM_BORDER = { '├', '─', '', '', '', '', '', '│' }
+local FRAME_HL = 'Normal:Normal,FloatBorder:Comment'
+
+local backdrop_buf, backdrop_win
+
+local function close_backdrop()
+  if backdrop_win and api.nvim_win_is_valid(backdrop_win) then
+    api.nvim_win_close(backdrop_win, true)
+  end
+  backdrop_win = nil
+end
+
+-- Geometry of the whole assembly. size.h/size.w are read as the outer
+-- dimensions, frame included, so the group never runs off the screen.
+local function geometry(state)
+  local conf = state.config
+  local min_h = #(state.terminals or { 1 }) + 5
+  local total_h = math.floor(vim.o.lines * (conf.size.h / 100))
+  local total_w = math.floor(vim.o.columns * (conf.size.w / 100))
+
+  total_h = math.min(math.max(total_h, min_h), vim.o.lines)
+  total_w = math.min(math.max(total_w, SIDEBAR_W + 14), vim.o.columns)
+
+  local g = {
+    -- outer frame (backdrop border) top-left
+    oy = math.max(0, math.floor((vim.o.lines - total_h) / 2) - 1),
+    ox = math.max(0, math.floor((vim.o.columns - total_w) / 2)),
+    -- interior: everything inside the frame
+    ih = total_h - 2,
+    iw = total_w - 2,
+  }
+  g.iy, g.ix = g.oy + 1, g.ox + 1
+  g.pane_w = g.iw - SIDEBAR_W - 1 -- minus the vertical rule
+  return g
+end
+
+local function apply_frame()
+  local state = require('floaterm.state')
+  if not state.volt_set or not (state.win and api.nvim_win_is_valid(state.win)) then
+    return
+  end
+
+  local volt = require('volt')
+  local g = geometry(state)
+
+  -- floaterm's sidebar filler and bar padding are derived from these, so
+  -- they have to describe the reshaped windows, not the original ones.
+  -- The bar pads itself to state.w - SIDEBAR_W - 2, two cells short of its
+  -- own window, so state.w has to be back-solved from the new pane width.
+  state.h = g.ih
+  state.w = g.pane_w + SIDEBAR_W
+
+  -- Reused by floaterm when it has to recreate the terminal window.
+  state.term_win_opts = {
+    relative = 'editor',
+    row = g.iy + 1,
+    col = g.ix + SIDEBAR_W,
+    width = g.pane_w,
+    height = g.ih - 2,
+    style = 'minimal',
+    border = TERM_BORDER,
+    zindex = 100,
+  }
+
+  if not (backdrop_win and api.nvim_win_is_valid(backdrop_win)) then
+    if not (backdrop_buf and api.nvim_buf_is_valid(backdrop_buf)) then
+      backdrop_buf = api.nvim_create_buf(false, true)
+    end
+    backdrop_win = api.nvim_open_win(backdrop_buf, false, {
+      relative = 'editor',
+      row = g.oy,
+      col = g.ox,
+      width = g.iw,
+      height = g.ih,
+      style = 'minimal',
+      border = OUTER_BORDER,
+      -- Below the group's own windows (100) but above the buffer, so it
+      -- backs the seams instead of covering the terminal.
+      zindex = 99,
+      focusable = false,
+      noautocmd = true,
+    })
+    vim.wo[backdrop_win].winhl = FRAME_HL
+  else
+    api.nvim_win_set_config(backdrop_win, {
+      relative = 'editor',
+      row = g.oy,
+      col = g.ox,
+      width = g.iw,
+      height = g.ih,
+      border = OUTER_BORDER,
+    })
+  end
+
+  api.nvim_win_set_config(state.sidewin, {
+    relative = 'editor',
+    row = g.iy,
+    col = g.ix,
+    width = SIDEBAR_W,
+    height = g.ih,
+    border = 'none',
+  })
+  api.nvim_win_set_config(state.barwin, {
+    relative = 'editor',
+    row = g.iy,
+    col = g.ix + SIDEBAR_W,
+    width = g.pane_w,
+    height = 1,
+    border = BAR_BORDER,
+  })
+  api.nvim_win_set_config(state.win, {
+    relative = 'editor',
+    row = state.term_win_opts.row,
+    col = state.term_win_opts.col,
+    width = state.term_win_opts.width,
+    height = state.term_win_opts.height,
+    border = TERM_BORDER,
+  })
+
+  vim.wo[state.barwin].winhl = FRAME_HL
+  vim.wo[state.win].winhl = FRAME_HL
+
+  -- volt lays its content out against a buffer of blank lines sized to
+  -- the window, so both buffers have to be refilled at the new size
+  -- before the extmarks are redrawn.
+  vim.bo[state.sidebuf].modifiable = true
+  volt.set_empty_lines(state.sidebuf, g.ih, SIDEBAR_W)
+  volt.redraw(state.sidebuf, 'all')
+  vim.bo[state.sidebuf].modifiable = false
+
+  vim.bo[state.barbuf].modifiable = true
+  volt.set_empty_lines(state.barbuf, 1, g.pane_w)
+  volt.redraw(state.barbuf, 'bar')
+  vim.bo[state.barbuf].modifiable = false
 end
 
 return {
@@ -91,4 +239,38 @@ return {
     end,
     mappings = { term = setup_term_buf },
   },
+  config = function(_, opts)
+    local floaterm = require('floaterm')
+    floaterm.setup(opts)
+
+    -- floaterm has no hook that runs once the group is on screen, so wrap
+    -- open(). toggle() and :FloatermToggle both route through it.
+    local open = floaterm.open
+    floaterm.open = function(...)
+      open(...)
+      apply_frame()
+    end
+
+    local group = api.nvim_create_augroup('FloatermFrame', { clear = true })
+
+    -- The backdrop isn't one of floaterm's windows, so nothing closes it
+    -- when the group goes away -- and the group can go away by toggle, by
+    -- volt's q/<Esc>, or by the last terminal being deleted.
+    api.nvim_create_autocmd('WinClosed', {
+      group = group,
+      callback = function()
+        if not backdrop_win then
+          return
+        end
+        vim.schedule(function()
+          local state = require('floaterm.state')
+          if state.volt_set and state.win and api.nvim_win_is_valid(state.win) then
+            return
+          end
+          close_backdrop()
+        end)
+      end,
+      desc = 'Tear down the floating terminal backdrop with the group',
+    })
+  end,
 }
