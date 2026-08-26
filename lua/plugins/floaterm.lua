@@ -253,6 +253,15 @@ return {
 
     local group = api.nvim_create_augroup('FloatermFrame', { clear = true })
 
+    -- floaterm sizes itself off vim.o.lines/columns once, at open. Without
+    -- this the group keeps its old size after the tmux pane it lives in is
+    -- resized.
+    api.nvim_create_autocmd('VimResized', {
+      group = group,
+      callback = apply_frame,
+      desc = 'Re-lay out the floating terminal when the editor resizes',
+    })
+
     -- The backdrop isn't one of floaterm's windows, so nothing closes it
     -- when the group goes away -- and the group can go away by toggle, by
     -- volt's q/<Esc>, or by the last terminal being deleted.
