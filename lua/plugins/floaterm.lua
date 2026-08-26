@@ -75,6 +75,33 @@ local function setup_term_buf(buf)
   vim.wo.sidescrolloff = 0
 end
 
+-- floaterm's own rename redraws the sidebar list and nothing else, so the
+-- info bar on the right keeps showing the old name until something happens
+-- to redraw it -- selecting a terminal, or the bar's own 10s refresh timer.
+-- It also writes the prompt's result back unconditionally, so cancelling
+-- sets the name to nil and every later bar redraw throws on the concat in
+-- floaterm's ui.lua. Same rename, minus both.
+local function setup_sidebar_buf(buf)
+  vim.keymap.set('n', 'e', function()
+    local state = require('floaterm.state')
+    local volt = require('volt')
+    local row = require('floaterm.utils').get_buf_on_cursor()
+    if not row then
+      return
+    end
+
+    vim.ui.input({ prompt = '   Enter name: ' }, function(input)
+      api.nvim_echo({}, false, {})
+      if not input or input == '' then
+        return
+      end
+      state.terminals[row].name = input
+      volt.redraw(state.sidebuf, 'bufs')
+      volt.redraw(state.barbuf, 'bar')
+    end)
+  end, { buffer = buf, desc = 'Rename terminal' })
+end
+
 -- floaterm builds its UI out of three independently bordered floats laid
 -- next to each other, which leaves a one-column seam between the sidebar
 -- and the terminal where the buffer underneath shows through, and gives
@@ -237,7 +264,7 @@ return {
     terminals = function()
       return { { name = 'Terminal', cmd = 'cd ' .. vim.fn.shellescape(float_term_dir()) } }
     end,
-    mappings = { term = setup_term_buf },
+    mappings = { sidebar = setup_sidebar_buf, term = setup_term_buf },
   },
   config = function(_, opts)
     local floaterm = require('floaterm')
