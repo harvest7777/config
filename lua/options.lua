@@ -20,7 +20,6 @@ vim.opt.hlsearch = false  -- don't highlight after search is done
 -- ui
 vim.opt.wrap = false       -- don't wrap long lines
 vim.opt.breakindent = true -- wrapped lines keep the original indent
-vim.opt.breakindentopt = 'shift:2' -- and get an extra indent so wraps stand out
 vim.opt.scrolloff = 18     -- keep 8 lines above/below cursor
 vim.opt.signcolumn = 'yes' -- always show sign column (prevents jumpiness)
 vim.opt.cursorline = true  -- highlight current line
