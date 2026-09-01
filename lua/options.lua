@@ -44,6 +44,15 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
   end,
 })
 
+-- soft wrap prose files at word boundaries
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'markdown', 'text' },
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true -- break at words, not mid-word
+  end,
+})
+
 -- restore cursor position per buffer
 local cursor_positions = {}
 
